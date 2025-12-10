@@ -1,7 +1,7 @@
-tensorflow<2.11
+tensorflow[and-cuda]
 DeepPurpose
 descriptastorus @ git+https://github.com/bp-kelley/descriptastorus@9b133e2c91bb6a67df53db4cba992776db219ab7
-rdkit
+rdkit-pypi
 nltk
 pandas
 numpy==1.26.4

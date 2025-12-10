@@ -1,4 +1,6 @@
 import os
+from pathlib import Path
+
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID" 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import warnings
@@ -16,7 +18,8 @@ import time
 from keras.callbacks import ModelCheckpoint
 warnings.filterwarnings("ignore")
 
-PATH  = '/home/debnathk/gramseq/'
+PATH = Path(__file__).resolve().parent.parent
+PATH = str(PATH) + "/"
 
 # Add commandline arguments
 parser = argparse.ArgumentParser(description='Add commandline arguments')

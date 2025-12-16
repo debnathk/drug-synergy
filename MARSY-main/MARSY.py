@@ -1,11 +1,11 @@
+from __future__ import print_function, division
 import keras
 import keras.backend as K
 import tensorflow as tf
-from __future__ import print_function, division
 from keras.layers import Input, Dense, Dropout, Activation
 from keras.models import Sequential, Model
 from keras import regularizers
-from keras.utils import np_utils
+# from keras.utils import np_utils
 from keras.callbacks import EarlyStopping
 import numpy as np
 import pandas as pd
@@ -85,9 +85,9 @@ def MARSY(X_tr, Y_tr, param):
                                                     loss={'Predictor_Drug_Combination': 'mse'}, 
                                                     metrics={'Predictor_Drug_Combination': 'mse'})
 
-    es = EarlyStopping(monitor='val_mse', mode='min', verbose=0, patience=param[6])
+    es = EarlyStopping(monitor='val_mse', mode='min', verbose=1, patience=param[6])
 
-    multi_conc = multitask_model.fit(X_tr, Y_tr, batch_size=param[5], epochs=param[4], verbose=0, 
+    multi_conc = multitask_model.fit(X_tr, Y_tr, batch_size=param[5], epochs=param[4], verbose=1, 
                                      validation_split=0.2, callbacks=es)
     
     return multitask_model 
@@ -110,4 +110,6 @@ param = [triple_length, pair_length, dropout_encoders, dropout_decoder, epochs, 
 training_set, testing_set = data_preparation(X_train, X_test, pair_length)
 trained_MARSY = MARSY(training_set, Y_train, param)
 pred = trained_MARSY.predict(testing_set)
+
+print(pred)
 

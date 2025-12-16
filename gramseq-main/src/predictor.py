@@ -1,12 +1,14 @@
 from __future__ import print_function
 from __future__ import division
+from pathlib import Path
 import keras
 from keras import backend as K
 from keras import optimizers
 from keras.callbacks import ReduceLROnPlateau
-import molecule_vae
+from src import molecule_vae
 
-PATH = '/home/debnathk/gramseq/'
+ROOT = Path(__file__).resolve().parent.parent
+DATA_PATH = ROOT / "data"
 
 def sampling(args):
     z_mean_, z_log_var_ = args
@@ -33,7 +35,7 @@ class DLEPS(object):
     def _build_model(self):
         
         # gVAE network - for drugs
-        grammar_weights = PATH + 'data/vae.hdf5'
+        grammar_weights = str(DATA_PATH / 'vae.hdf5')
         grammar_model = molecule_vae.ZincGrammarModel(grammar_weights)
         grammar_model.trainable = False
         self.grammar_model = grammar_model
@@ -41,6 +43,11 @@ class DLEPS(object):
         latent_dim = 56
         output_gvae = keras.layers.Lambda(sampling, output_shape=(latent_dim,), name='lambda')([z_mn, z_var])
 
+        model = keras.models.Model(inputs=grammar_model.vae.encoderMV.input, outputs=output_gvae)
+
+        return model
+
+        """
         # Dense network - for rna seq data
         input_dense = keras.Input(shape=(978, 2))
         x = keras.layers.Flatten()(input_dense)
@@ -121,8 +128,9 @@ class DLEPS(object):
                 model = keras.models.Model(inputs=[grammar_model.vae.encoderMV.input, visible_1], outputs = outputs)
         else:
             print('Choose between the following protein encodings - CNN, RNN')
-            
+
         return model
+        """
     
     def train(self, smile_train, rna_train, validation_data, epochs=30000, batch_size=512, shuffle=True):
     

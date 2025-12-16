@@ -3,7 +3,7 @@ from tensorflow.keras import backend as K
 from tensorflow.keras import losses
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, Dense, Lambda, TimeDistributed, GRU, Conv1D, Flatten, RepeatVector
-import zinc_grammar as G
+import src.zinc_grammar as G
 
 # tf.compat.v1.disable_v2_behavior() # model trained in tf1
 # helper variables in Keras format for parsing the grammar

@@ -1,8 +1,8 @@
 import nltk
 import numpy as np
 
-import zinc_grammar
-import models.model_zinc
+from src import zinc_grammar
+from src.models import model_zinc
 from functools import reduce
 
 def xlength(y):
@@ -54,7 +54,7 @@ class ZincGrammarModel(object):
     def __init__(self, weights_file, latent_rep_size=56):
         """ Load the (trained) zinc encoder/decoder, grammar model. """
         self._grammar = zinc_grammar
-        self._model = models.model_zinc
+        self._model = model_zinc
         self.MAX_LEN = self._model.MAX_LEN
         self._productions = self._grammar.GCFG.productions()
         self._prod_map = {}

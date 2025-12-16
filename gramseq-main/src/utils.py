@@ -4,7 +4,7 @@ from rdkit import Chem, DataStructs
 from sklearn.preprocessing import OneHotEncoder
 from functools import reduce
 import nltk
-import zinc_grammar
+from src import zinc_grammar
 import warnings
 import pandas as pd
 import pickle

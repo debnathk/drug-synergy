@@ -1,10 +1,31 @@
-2025-12-10 11:04:11.137000: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9261] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
-2025-12-10 11:04:11.217470: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
-2025-12-10 11:04:16.307637: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1515] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-2025-12-10 11:04:36.034865: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
-To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
-2025-12-10 11:08:03.209753: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
-2025-12-10 11:11:56.015233: W tensorflow/core/common_runtime/gpu/gpu_device.cc:2256] Cannot dlopen some GPU libraries. Please make sure the missing libraries mentioned above are installed properly if you would like to use GPU. Follow the guide at https://www.tensorflow.org/install/gpu for how to download and setup the required libraries for your platform.
-Skipping registering GPU devices...
-/var/spool/slurm/d/job1664539/slurm_script: line 21: 3793362 Killed                  python src/train.py --dataset bindingdb --protenc CNN --epochs 500 --folds 5
-slurmstepd: error: Detected 1 oom_kill event in StepId=1664539.batch. Some of the step tasks have been OOM Killed.
+2025-12-15 16:41:45.165018: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-12-15 16:42:43.798132: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F AVX512_VNNI AVX512_BF16 AVX512_FP16 AVX_VNNI AMX_TILE AMX_INT8 AMX_BF16 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2025-12-15 16:47:04.400908: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1765835438.123137 3717507 gpu_device.cc:2020] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 78790 MB memory:  -> device: 0, name: NVIDIA H100 80GB HBM3, pci bus id: 0000:e4:00.0, compute capability: 9.0
+E0000 00:00:1765835508.938342 3722328 ptx_compiler_helpers.cc:88] *** WARNING *** Invoking ptxas with version 12.3.107, which corresponds to a CUDA version <=12.6.2. CUDA versions 12.x.y up to and including 12.6.2 miscompile certain edge cases around clamping.
+Please upgrade to CUDA 12.6.3 or newer.
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/lustre/home/debnathk/drug-synergy/gramseq-main/src/test/test_gvae.py", line 30, in <module>
+    dleps_p = DLEPS()
+              ^^^^^^^
+  File "/lustre/home/debnathk/drug-synergy/gramseq-main/src/predictor.py", line 33, in __init__
+    self.model.append(self._build_model())
+                      ^^^^^^^^^^^^^^^^^^^
+  File "/lustre/home/debnathk/drug-synergy/gramseq-main/src/predictor.py", line 39, in _build_model
+    grammar_model = molecule_vae.ZincGrammarModel(grammar_weights)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/lustre/home/debnathk/drug-synergy/gramseq-main/src/molecule_vae.py", line 70, in __init__
+    self.vae.load(self._productions, weights_file, max_length=self.MAX_LEN, latent_rep_size=latent_rep_size)
+  File "/lustre/home/debnathk/drug-synergy/gramseq-main/src/models/model_zinc.py", line 136, in load
+    self.create(charset, max_length = max_length, weights_file = weights_file, latent_rep_size = latent_rep_size)
+  File "/lustre/home/debnathk/drug-synergy/gramseq-main/src/models/model_zinc.py", line 61, in create
+    self.autoencoder.load_weights(weights_file)
+  File "/lustre/home/debnathk/anaconda3/envs/aidd-tensorflow/lib/python3.11/site-packages/keras/src/utils/traceback_utils.py", line 122, in error_handler
+    raise e.with_traceback(filtered_tb) from None
+  File "/lustre/home/debnathk/anaconda3/envs/aidd-tensorflow/lib/python3.11/site-packages/keras/src/legacy/saving/legacy_h5_format.py", line 452, in _set_weights
+    raise ValueError(
+ValueError: Shape mismatch in layer #0 (named conv_1)for weight conv_1/kernel. Weight expects shape (9, 76, 9). Received saved weight with shape (9, 1, 76, 9)

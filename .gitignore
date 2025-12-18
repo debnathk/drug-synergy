@@ -2,3 +2,4 @@ test
 *.csv
 *.txt
 *.zip
+*.DS_Store

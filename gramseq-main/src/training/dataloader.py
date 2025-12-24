@@ -37,14 +37,14 @@ train_loader = DataLoader(
     train_dataset,
     batch_size=64,
     shuffle=True,
-    num_workers=2
+    num_workers=1  # Reduced from 2 to avoid worker warning
 )
 
 val_loader = DataLoader(
     val_dataset,
     batch_size=64,
     shuffle=True,
-    num_workers=2
+    num_workers=1  # Reduced from 2 to avoid worker warning
 )
 
 def main():

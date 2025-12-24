@@ -200,18 +200,19 @@ class MoleculeVAE(nn.Module):
 
         # Get indices for mask lookup
         # ind_of_ind maps symbol indices to mask indices
-        ix2 = ind_of_ind[most_likely_flat]  # (batch_size * max_len)
+        # Move ind_of_ind to the same device as the input
+        ind_of_ind_device = ind_of_ind.to(x_true.device)
+        ix2 = ind_of_ind_device[most_likely_flat]  # (batch_size * max_len)
         ix2 = ix2.unsqueeze(1)  # (batch_size * max_len, 1)
 
         # Get the appropriate masks
-        M2 = masks[ix2.squeeze(1)]  # (batch_size * max_len, max_len, charset_length)
+        # Move masks to the same device as the input
+        masks_device = masks.to(x_true.device)
+        M2 = masks_device[ix2.squeeze(1)]  # (batch_size * max_len, max_len, charset_length)
 
         # Reshape back to batch format
         batch_size = x_true.size(0)
         M3 = M2.view(batch_size, MAX_LEN, DIM)  # (batch_size, max_len, charset_length)
-
-        # Move masks to same device as predictions
-        M3 = M3.to(x_pred.device)
 
         # Apply mask to exp(predictions)
         P2 = torch.exp(x_pred) * M3
@@ -247,11 +248,10 @@ class MoleculeVAE(nn.Module):
 
         # Binary cross-entropy loss (reconstruction loss)
         # Note: Using binary cross-entropy as in original TF implementation
-        bce_loss = F.binary_cross_entropy(x_pred_flat, x_true_flat, reduction='sum')
-        reconstruction_loss = bce_loss / x_true.size(0)  # Average over batch
-
-        # Scale by sequence length (as in TF implementation)
-        reconstruction_loss = reconstruction_loss * self.max_len
+        # In TF: max_length * binary_crossentropy (which averages over batch)
+        # So we compute mean BCE and multiply by max_len
+        bce_loss = F.binary_cross_entropy(x_pred_flat, x_true_flat, reduction='mean')
+        reconstruction_loss = bce_loss * self.max_len
 
         # KL divergence loss
         # KL(Q(z|X) || P(z)) where P(z) = N(0,1)

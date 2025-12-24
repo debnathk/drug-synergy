@@ -246,8 +246,8 @@ def main():
         mode='min',
         factor=CONFIG["scheduler_factor"],
         patience=CONFIG["scheduler_patience"],
-        min_lr=CONFIG["scheduler_min_lr"],
-        verbose=True
+        min_lr=CONFIG["scheduler_min_lr"]
+        # verbose parameter removed (deprecated)
     )
 
     # Load checkpoint if exists

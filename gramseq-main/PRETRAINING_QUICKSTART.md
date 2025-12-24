@@ -28,7 +28,7 @@ python -m src.training.pretrain_moleculevae
 
 The script will:
 - Load Guacamol train/val dataloaders
-- Initialize MoleculeVAE model (latent_dim=56)
+- Initialize MoleculeVAE model (latent_dim=256)
 - Train with Adam optimizer (lr=1e-3)
 - Apply ReduceLROnPlateau scheduler
 - Save checkpoints to `checkpoints/moleculevae/`
@@ -109,7 +109,7 @@ Edit `CONFIG` in [`pretrain_moleculevae.py`](src/training/pretrain_moleculevae.p
 
 ```python
 CONFIG = {
-    "latent_dim": 56,              # Latent space dimension
+    "latent_dim": 256,             # Latent space dimension
     "learning_rate": 1e-3,         # Initial learning rate
     "num_epochs": 100,             # Total epochs
     "epsilon_std": 0.01,           # Sampling noise

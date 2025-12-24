@@ -43,7 +43,7 @@ Edit the `CONFIG` dictionary in the script to modify hyperparameters:
 
 ```python
 CONFIG = {
-    "latent_dim": 56,              # VAE latent space dimension
+    "latent_dim": 256,             # VAE latent space dimension
     "learning_rate": 1e-3,         # Initial learning rate
     "num_epochs": 100,             # Total training epochs
     "epsilon_std": 0.01,           # Sampling noise std

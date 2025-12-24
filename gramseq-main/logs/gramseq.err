@@ -1,12 +1,23 @@
-Lmod has detected the following error: The following module(s) are unknown:
-"cuda/12.3"
-
-Please check the spelling or version number. Also try "module spider ..."
-It is also possible your cache file is out-of-date; it may help to try:
-  $ module --ignore_cache load "cuda/12.3"
-
-Also make sure that all modulefiles written in TCL start with the string
-#%Module
-
-
-
+/home/debnathk/.local/lib/python3.10/site-packages/torch/utils/data/dataloader.py:558: UserWarning: This DataLoader will create 2 worker processes in total. Our suggested max number of worker in current system is 1, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+  warnings.warn(_create_warning_msg(
+/home/debnathk/.local/lib/python3.10/site-packages/torch/optim/lr_scheduler.py:28: UserWarning: The verbose parameter is deprecated. Please use get_last_lr() to access the learning rate.
+  warnings.warn("The verbose parameter is deprecated. Please use get_last_lr() "
+Epoch 1 [Train]:   0%|          | 0/14844 [00:00<?, ?it/s]/home/debnathk/.local/lib/python3.10/site-packages/torch/utils/data/dataloader.py:558: UserWarning: This DataLoader will create 2 worker processes in total. Our suggested max number of worker in current system is 1, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+  warnings.warn(_create_warning_msg(
+Epoch 1 [Train]:   0%|          | 0/14844 [00:00<?, ?it/s]
+Traceback (most recent call last):
+  File "/home/debnathk/miniconda/envs/aidd/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/home/debnathk/miniconda/envs/aidd/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/home/debnathk/drug-synergy/gramseq-main/src/training/pretrain_moleculevae.py", line 329, in <module>
+    main()
+  File "/home/debnathk/drug-synergy/gramseq-main/src/training/pretrain_moleculevae.py", line 274, in main
+    train_loss = train_epoch(model, train_loader, optimizer, device, epoch)
+  File "/home/debnathk/drug-synergy/gramseq-main/src/training/pretrain_moleculevae.py", line 90, in train_epoch
+    loss = model.vae_loss(target, x_recon, z_mean, z_log_var)
+  File "/home/debnathk/drug-synergy/gramseq-main/src/models/model_zinc.py", line 242, in vae_loss
+    x_pred_conditional = self.conditional(x_true, x_pred)
+  File "/home/debnathk/drug-synergy/gramseq-main/src/models/model_zinc.py", line 203, in conditional
+    ix2 = ind_of_ind[most_likely_flat]  # (batch_size * max_len)
+RuntimeError: indices should be either on cpu or on the same device as the indexed tensor (cpu)

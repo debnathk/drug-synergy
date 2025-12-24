@@ -25,3 +25,4 @@ figures
 result_logs
 results
 *events.out.tfevents*
+*.pt

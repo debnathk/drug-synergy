@@ -275,7 +275,7 @@ if __name__ == "__main__":
     charset = list(range(DIM))  # Dummy charset with same length as grammar
 
     # Initialize the model
-    latent_dim = 56  # Example latent dimension (same as in original paper)
+    latent_dim = 256  # Example latent dimension (same as in original paper)
     model = MoleculeVAE(charset, latent_dim)
 
     print(f"\nModel initialized successfully!")

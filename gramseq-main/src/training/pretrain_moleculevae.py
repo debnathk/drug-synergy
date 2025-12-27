@@ -31,13 +31,13 @@ CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
 # Hyperparameters
 CONFIG = {
     "latent_dim": 256,
-    "learning_rate": 1e-3,
+    "learning_rate": 1e-5, # 1e-4 causes converges very fast and results in loss = 0 (overfitting) 
     "num_epochs": 100,
     "device": "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu",
     "epsilon_std": 0.01,
     "scheduler_patience": 5,
-    "scheduler_factor": 0.5,
-    "scheduler_min_lr": 1e-6,
+    "scheduler_factor": 0.2,
+    "scheduler_min_lr": 1e-8,
     "grad_clip": 1.0,
 }
 

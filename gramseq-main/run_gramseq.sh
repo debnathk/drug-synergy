@@ -4,7 +4,7 @@
 #SBATCH --error=./logs/gramseq.err
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:40g:1
-#SBATCH --mem=150G
+#SBATCH --mem=200G
 #SBATCH --time=30-00:00:00
 
 echo "Experiment starts at: $(date)"
@@ -25,6 +25,8 @@ python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"
 
 # python -m src.training.dataloader
 python -m src.training.pretrain_moleculevae
+# python -m src.training.visualize_training
+# python -m src.training.test_pretrained
 
 # python src/train.py --dataset bindingdb\
 #                     --protenc CNN\

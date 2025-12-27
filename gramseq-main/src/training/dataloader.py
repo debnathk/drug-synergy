@@ -35,14 +35,14 @@ val_dataset = ChEMBLDataset(file_path=str(GUACAMOL_DATA_DIR / "val_smiles.txt"))
 # Create dataloaders
 train_loader = DataLoader(
     train_dataset,
-    batch_size=64,
+    batch_size=2048,
     shuffle=True,
     num_workers=1  # Reduced from 2 to avoid worker warning
 )
 
 val_loader = DataLoader(
     val_dataset,
-    batch_size=64,
+    batch_size=2048,
     shuffle=True,
     num_workers=1  # Reduced from 2 to avoid worker warning
 )

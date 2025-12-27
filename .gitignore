@@ -3,3 +3,4 @@ test
 *.txt
 *.zip
 *.DS_Store
+*.pt

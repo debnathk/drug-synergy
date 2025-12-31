@@ -1,7 +1,9 @@
 archive
+data
 test
 *.csv
 *.txt
 *.zip
 *.DS_Store
 *.pt
+*.pyc

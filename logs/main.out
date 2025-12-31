@@ -1,0 +1,5 @@
+Job started on Tue Dec 30 07:21:21 PM EST 2025
+torch.Size([256]) torch.Size([256]) torch.Size([256])
+torch.Size([256])
+torch.Size([768])
+Job ended on Tue Dec 30 07:21:27 PM EST 2025

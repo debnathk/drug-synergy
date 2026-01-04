@@ -1,6 +1,6 @@
 """
-Description: Split synergy dataset into train, val and test and save splits as csv
-
+Description: Split synergy dataset into train, val and test and save splits as pkl (CSV is not recommended because of the heterogenous schema of the data)
+Outcome: Train-val-test data as .pkl
 Author: Kusal Debnath
 """
 
@@ -11,9 +11,9 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA_PATH = ROOT / "data"
 
 RAW_DATA_PATH = DATA_PATH / "raw"
-TRAIN_DATA_PATH = RAW_DATA_PATH / "train_split.csv"
-VAL_DATA_PATH = RAW_DATA_PATH / "val_split.csv"
-TEST_DATA_PATH = RAW_DATA_PATH / "test_split.csv"
+TRAIN_DATA_PATH = RAW_DATA_PATH / "train_split.pkl"
+VAL_DATA_PATH = RAW_DATA_PATH / "val_split.pkl"
+TEST_DATA_PATH = RAW_DATA_PATH / "test_split.pkl"
 
 def main():
 
@@ -28,17 +28,17 @@ def main():
     # print(f"Test shape: {test_split.shape}")
 
     if not TRAIN_DATA_PATH.exists():
-        train_split.to_csv(TRAIN_DATA_PATH, index=False)
+        train_split.to_pickle(TRAIN_DATA_PATH)
     else:
         print(f'Train data already exists in {TRAIN_DATA_PATH}')
 
     if not VAL_DATA_PATH.exists():
-        val_split.to_csv(VAL_DATA_PATH, index=False)
+        val_split.to_pickle(VAL_DATA_PATH)
     else:
         print(f'Validation data already exists in {VAL_DATA_PATH}')
 
     if not TEST_DATA_PATH.exists():
-        test_split.to_csv(TEST_DATA_PATH, index=False)
+        test_split.to_pickle(TEST_DATA_PATH)
     else:
         print(f'Test data already exists in {TEST_DATA_PATH}')
 

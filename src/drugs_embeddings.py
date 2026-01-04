@@ -1,6 +1,6 @@
 """
 Description: Get embedding for all the unique drugs in DrugComb dataset
-
+Outcome: Embeddings of unique drugs as .pt
 Autor: Kusal Debnath
 """
 
@@ -69,11 +69,11 @@ def main():
         "dim": embeddings.shape[1]
     }
 
-    torch.save(embeddings_info, str(DATA_PATH / "embeddings/embeddings.pt"))
-    print(f'Embeddings generated and saved in {str(DATA_PATH / "embeddings/embeddings.pt")}')
+    torch.save(embeddings_info, str(DATA_PATH / "embeddings/drug_embeddings.pt"))
+    print(f'Embeddings generated and saved in {str(DATA_PATH / "embeddings/drug_embeddings.pt")}')
 
 if __name__ == "__main__":
-    if not Path(DATA_PATH / "embeddings/embeddings.pt").exists():
+    if not Path(DATA_PATH / "embeddings/drug_embeddings.pt").exists():
         main()
     else:
         print(f'Embeddings already generated and can be found in {str(DATA_PATH / "embeddings/embeddings.pt")}')

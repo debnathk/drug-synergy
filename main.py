@@ -2,7 +2,7 @@ import torch
 import pandas as pd
 from pathlib import Path
 from tdc.multi_pred import DrugSyn
-from encoders import OmicsEncoder
+from omics_embeddings import OmicsEncoder
 
 data = DrugSyn(name="DrugComb")
 split = data.get_split()
@@ -39,3 +39,5 @@ cell_emb = (weights * Z).sum(dim=1)
 cell_emb_proj = cell_proj_layer(cell_emb) # projects dim 256 -> 768 (to match drug embedding dim)
 print(cell_emb.shape)
 print(cell_emb_proj.shape)
+
+# create dataset object, dataloader, MLP, train

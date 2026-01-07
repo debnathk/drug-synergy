@@ -1,43 +1,129 @@
 import torch
-import pandas as pd
+import torch.nn as nn
+from torch.utils.data import Dataset, DataLoader
+import pickle
+
 from pathlib import Path
-from tdc.multi_pred import DrugSyn
-from omics_embeddings import OmicsEncoder
 
-data = DrugSyn(name="DrugComb")
-split = data.get_split()
+ROOT = Path(__file__).resolve().parent
+RAW_DATA_PATH = ROOT / "data/raw"
+EMBEDDINGS_PATH = ROOT / "data/embeddings"
 
-train_split, val_split, test_split = split['train'], split['valid'], split['test']
+# Dataset
+class DrugSynergyDataset(Dataset):
+    def __init__(self, df, drug_emb_path, omics_emb_path, target_cols):
+        self.df = df.reset_index(drop=True)
+        self.drug_emb = torch.load(drug_emb_path)
+        self.omics_emb = torch.load(omics_emb_path)
+        self.target_cols = target_cols
 
-# print(len(train_split['CellLine'][0][0]), len(train_split['CellLine'][0][1]), len(train_split['CellLine'][0][2]))
-# print(len(val_split['CellLine'][0][0]), len(val_split['CellLine'][0][1]), len(val_split['CellLine'][0][2]))
-# print(len(test_split['CellLine'][0][0]), len(test_split['CellLine'][0][1]), len(test_split['CellLine'][0][2]))
+    def __len__(self):
+        return len(self.df)
 
-mrna_dim = len(train_split['CellLine'][0][0])
-proteomics_dim = len(train_split['CellLine'][0][1])
-mirna_dim = len(train_split['CellLine'][0][2])
+    def __getitem__(self, idx):
+        row = self.df.iloc[idx]
 
-mrna_encoder = OmicsEncoder(mrna_dim)
-proteomics_encoder = OmicsEncoder(proteomics_dim)
-mirna_encoder = OmicsEncoder(mirna_dim)
+        d1 = self.drug_emb["embeddings"][row['Drug1']]
+        d2 = self.drug_emb["embeddings"][row['Drug2']]
 
-z_mrna = mrna_encoder(torch.tensor(train_split['CellLine'][0][0], dtype=torch.float32))
-z_proteomics = proteomics_encoder(torch.tensor(train_split['CellLine'][0][1], dtype=torch.float32))
-z_mirna = mirna_encoder(torch.tensor(train_split['CellLine'][0][2], dtype=torch.float32))
+        sample_id = f"{row['Drug1']}__{row['Drug2']}__{row['Cell_Line_ID']}"
+        omics = self.omics_emb[sample_id]
 
-print(z_mrna.shape, z_proteomics.shape, z_mirna.shape)
+        x = torch.cat([d1, d2, omics], dim=-1)   # [2304]
+        y = torch.tensor(row[self.target_cols].values.astype(float), dtype=torch.float32)
 
-# Attention-based omics fusion
-Z = torch.stack([z_mrna, z_proteomics, z_mirna], dim=1) # (B, 3, 256)
-attn_layer = torch.nn.Linear(Z.size(-1), 1)  # Define an attention layer
-cell_proj_layer = torch.nn.Sequential(
-    torch.nn.Linear(256, 768),
-    torch.nn.ReLU()
-)
-weights = torch.softmax(attn_layer(Z), dim=1) # Importance if each modality embedding
-cell_emb = (weights * Z).sum(dim=1)
-cell_emb_proj = cell_proj_layer(cell_emb) # projects dim 256 -> 768 (to match drug embedding dim)
-print(cell_emb.shape)
-print(cell_emb_proj.shape)
+        return x, y
 
-# create dataset object, dataloader, MLP, train
+# Load your dataset
+with open(RAW_DATA_PATH / "train_split.pkl", 'rb') as file:
+    train_df = pickle.load(file)
+
+with open(RAW_DATA_PATH / "val_split.pkl", 'rb') as file:
+    val_df = pickle.load(file)
+
+# Define the target columns
+target_cols = ['Synergy_ZIP', 'Synergy_Bliss', 'Synergy_Loewe', 'Synergy_HSA']
+
+# Paths to embeddings (replace with actual paths)
+drug_emb_path = EMBEDDINGS_PATH / 'drug_embeddings.pt'
+train_omics_emb_path = EMBEDDINGS_PATH / 'train_omics.pt'
+val_omics_emb_path = EMBEDDINGS_PATH / 'val_omics.pt'
+
+# Create datasets
+train_dataset = DrugSynergyDataset(train_df, drug_emb_path, train_omics_emb_path, target_cols)
+val_dataset = DrugSynergyDataset(val_df, drug_emb_path, val_omics_emb_path, target_cols)
+
+# DataLoader
+train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=64, shuffle=False) 
+
+# MLP
+class SynergyMLP(nn.Module):
+    def __init__(self, input_dim=2304, output_dim=4):
+        super().__init__()
+
+        self.net = nn.Sequential(
+            nn.Linear(input_dim, 1024),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(1024, 256),
+            nn.ReLU(),
+            nn.Linear(256, output_dim)
+        )
+
+    def forward(self, x):
+        return self.net(x)
+    
+# Training loop
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+model = SynergyMLP().to(device)
+optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
+criterion = nn.MSELoss()   # multi-target regression
+
+def train_epoch(loader):
+    model.train()
+    total_loss = 0
+
+    for x, y in loader:
+        x, y = x.to(device), y.to(device)
+
+        optimizer.zero_grad()
+        preds = model(x)
+        loss = criterion(preds, y)
+
+        loss.backward()
+        optimizer.step()
+
+        total_loss += loss.item() * x.size(0)
+
+    return total_loss / len(loader.dataset)
+
+
+def eval_epoch(loader):
+    model.eval()
+    total_loss = 0
+
+    with torch.no_grad():
+        for x, y in loader:
+            x, y = x.to(device), y.to(device)
+            preds = model(x)
+            loss = criterion(preds, y)
+            total_loss += loss.item() * x.size(0)
+
+    return total_loss / len(loader.dataset)
+
+# Run training
+for epoch in range(20):
+    train_loss = train_epoch(train_loader)
+    val_loss = eval_epoch(val_loader)
+
+    print(f"Epoch {epoch+1:02d} | Train: {train_loss:.4f} | Val: {val_loss:.4f}")
+    
+def sanity_check():
+    x, y = train_dataset[0]
+    print(x, x.shape)   # torch.Size([2304])
+    print(y, y.shape)   # torch.Size([4])
+    
+# if __name__ == "__main__":
+#     sanity_check()

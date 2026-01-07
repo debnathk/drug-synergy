@@ -9,7 +9,7 @@ from tdc.multi_pred import DrugSyn
 from tqdm import tqdm
 import numpy as np
 from pathlib import Path
-from src.models.language_model import MolFormerMLM
+from models.language_model import MolFormerMLM
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_PATH = ROOT / "data"
@@ -51,29 +51,35 @@ def main():
             yield iterable[i:i+batch_size]
 
     batch_size = 32
-    embeddings = []
+    drug_embeddings_dict = {}
     language_model = MolFormerMLM()
 
     for batch in tqdm(batched(unique_drugs, batch_size), desc="Embedding", total=len(unique_drugs) // batch_size + 1):
         emb = language_model.get_batch_embeddings(batch)
-        embeddings.append(emb)
 
-    embeddings = np.vstack(embeddings)
-    print(f"Drug embeddings shape: {embeddings.shape}")
+        # Convert to torch tensor
+        if isinstance(emb, np.ndarray):
+            emb = torch.from_numpy(emb)
+
+        emb = emb.float().cpu()
+
+        for smi, vec in zip(batch, emb):
+            drug_embeddings_dict[smi] = vec # vec shape: (768,)
+
+    print(f"Drug embeddings type and shape: {type(vec)} ,{vec.shape}")
 
     # Save embeddings
     embeddings_info = {
-        "embeddings": embeddings,
-        "smiles": unique_drugs,
+        "embeddings": drug_embeddings_dict,
         "model": "MolFormer-XL",
-        "dim": embeddings.shape[1]
+        "dim": next(iter(drug_embeddings_dict.values())).shape[0]
     }
 
     torch.save(embeddings_info, str(DATA_PATH / "embeddings/drug_embeddings.pt"))
     print(f'Embeddings generated and saved in {str(DATA_PATH / "embeddings/drug_embeddings.pt")}')
 
 if __name__ == "__main__":
-    if not Path(DATA_PATH / "embeddings/drug_embeddings.pt").exists():
-        main()
-    else:
-        print(f'Embeddings already generated and can be found in {str(DATA_PATH / "embeddings/embeddings.pt")}')
+    # if not Path(DATA_PATH / "embeddings/drug_embeddings.pt").exists():
+    main()
+    # else:
+        # print(f'Embeddings already generated and can be found in {str(DATA_PATH / "embeddings/embeddings.pt")}')

@@ -14,6 +14,6 @@ conda activate aidd
 
 module load cuda/12.8
 
-python src/omics_embeddings.py
+python main.py
 
 echo "Job ended on $(date)"

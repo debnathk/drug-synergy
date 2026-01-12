@@ -1,6 +1,6 @@
 """
 Description: Create encoder for omics, save unique omics embeddings as .pt
-Outcone: Embeddings of unique omics as .pt
+Outcome: Embeddings of unique omics as .pt
 Author: Kusal Debnath
 """
 
@@ -37,7 +37,7 @@ class OmicsEncoder(nn.Module):
         return self.net(x)
     
 class OmicsAttentionFusion(nn.Module):
-    def __init__(self, emb_dim=256, num_modalities=3):
+    def __init__(self, emb_dim=256):
         super().__init__()
         self.attn = nn.MultiheadAttention(
             embed_dim=emb_dim,

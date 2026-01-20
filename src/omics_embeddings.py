@@ -9,14 +9,47 @@ import torch.nn as nn
 from tdc.multi_pred import DrugSyn
 import pandas as pd
 from pathlib import Path
-from typing import Dict
 from tqdm import tqdm
+import logging
+from datetime import datetime
 
+# Define paths
 ROOT = Path(__file__).resolve().parent.parent
 DATA_PATH = ROOT / "data"
+LOG_PATH = ROOT / "logs"
+
 TRAIN_OMICS_PATH = DATA_PATH / "embeddings/train_omics.pt"
 VAL_OMICS_PATH = DATA_PATH / "embeddings/val_omics.pt"
 TEST_OMICS_PATH = DATA_PATH / "embeddings/test_omics.pt"
+
+def setup_logging():
+    """
+    Creates a timestamped log directory and configures logging.
+    Returns the run directory path.
+    """
+    # Create timestamp-based run directory
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    run_dir = LOG_PATH / f"run_{timestamp}"
+    run_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Configure logging
+    log_file = run_dir / "omics_embedding.log"
+    
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s | %(levelname)s | %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S',
+        handlers=[
+            logging.FileHandler(log_file),
+            logging.StreamHandler()  # Also print to console
+        ]
+    )
+    
+    logger = logging.getLogger(__name__)
+    logger.info(f"Log directory: {run_dir}")
+    logger.info(f"Log file: {log_file}")
+    
+    return run_dir, logger
 
 data = DrugSyn(name="DrugComb")
 split = data.get_split()

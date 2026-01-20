@@ -4,8 +4,12 @@ Outcome: Train-val-test data as .pkl
 Author: Kusal Debnath
 """
 
+import torch
+from torch.utils.data import Dataset
 from tdc.multi_pred import DrugSyn
 from pathlib import Path
+
+from .utils import standardize
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_PATH = ROOT / "data"
@@ -15,7 +19,32 @@ TRAIN_DATA_PATH = RAW_DATA_PATH / "train_split.pkl"
 VAL_DATA_PATH = RAW_DATA_PATH / "val_split.pkl"
 TEST_DATA_PATH = RAW_DATA_PATH / "test_split.pkl"
 
-def main():
+# Dataset class
+class DrugSynergyDataset(Dataset):
+    def __init__(self, df, drug_emb_path, omics_emb_path, target_col):
+        self.df = df.reset_index(drop=True)
+        self.drug_emb = torch.load(drug_emb_path)
+        self.omics_emb = torch.load(omics_emb_path)
+        self.target_col = target_col
+
+    def __len__(self):
+        return len(self.df)
+
+    def __getitem__(self, idx):
+        row = self.df.iloc[idx]
+
+        d1 = self.drug_emb["embeddings"][row['Drug1']]
+        d2 = self.drug_emb["embeddings"][row['Drug2']]
+
+        sample_id = f"{row['Drug1']}__{row['Drug2']}__{row['Cell_Line_ID']}"
+        omics = self.omics_emb[sample_id]
+
+        x = torch.cat([d1, d2, omics], dim=-1)   # [2304]
+        y = torch.tensor([row[self.target_col]], dtype=torch.float32) # [1]
+
+        return x, y
+
+def split_train_val_test():
 
     # Load drug-synergy data
     data = DrugSyn(name="DrugComb")
@@ -43,4 +72,4 @@ def main():
         print(f'Test data already exists in {TEST_DATA_PATH}')
 
 if __name__ == "__main__":
-    main()
+    split_train_val_test()

@@ -14,6 +14,8 @@ conda activate aidd
 
 module load cuda/12.8
 
-python main.py
+python -c "import torch; print(torch.cuda.get_device_name(0))"
+
+# python main.py
 
 echo "Job ended on $(date)"

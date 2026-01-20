@@ -44,6 +44,49 @@ class DrugSynergyDataset(Dataset):
 
         return x, y
 
+
+class DrugSynergyRawOmicsDataset(Dataset):
+    """
+    Dataset for end-to-end training with raw omics features.
+    Returns drug embeddings and raw omics separately for the SynergyModel.
+    """
+    def __init__(self, df, drug_emb_path, target_col):
+        self.df = df.reset_index(drop=True)
+        self.drug_emb = torch.load(drug_emb_path)
+        self.target_col = target_col
+
+        # Get omics dimensions from first sample
+        first_cell_line = self.df.iloc[0]['CellLine']
+        self.mrna_dim = len(first_cell_line[0])
+        self.mirna_dim = len(first_cell_line[2])
+        self.prot_dim = len(first_cell_line[1])
+
+    def __len__(self):
+        return len(self.df)
+
+    def get_omics_dims(self):
+        """Returns dimensions of omics features: (mrna_dim, mirna_dim, prot_dim)"""
+        return self.mrna_dim, self.mirna_dim, self.prot_dim
+
+    def __getitem__(self, idx):
+        row = self.df.iloc[idx]
+
+        # Drug embeddings (frozen, pre-computed)
+        d1 = self.drug_emb["embeddings"][row['Drug1']]
+        d2 = self.drug_emb["embeddings"][row['Drug2']]
+
+        # Raw omics features
+        cell_line = row['CellLine']
+        mrna = torch.tensor(cell_line[0], dtype=torch.float32)
+        prot = torch.tensor(cell_line[1], dtype=torch.float32)
+        mirna = torch.tensor(cell_line[2], dtype=torch.float32)
+
+        # Target
+        y = torch.tensor([row[self.target_col]], dtype=torch.float32)
+
+        return d1, d2, mrna, mirna, prot, y
+
+
 def split_train_val_test():
 
     # Load drug-synergy data

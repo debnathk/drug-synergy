@@ -5,8 +5,8 @@ import pickle
 from sklearn.preprocessing import StandardScaler
 
 from pathlib import Path
-from src.dataset import DrugSynergyDataset
-from src.models.mlp import SynergyMLP
+from src.dataset import DrugSynergyRawOmicsDataset
+from src.models.synergy_model import SynergyModel
 from tqdm import tqdm
 import logging
 from datetime import datetime
@@ -80,8 +80,7 @@ target_cols = ['Synergy_ZIP', 'Synergy_Bliss', 'Synergy_Loewe', 'Synergy_HSA']
 
 # Paths to embeddings
 drug_emb_path = EMBEDDINGS_PATH / 'drug_embeddings.pt'
-train_omics_emb_path = EMBEDDINGS_PATH / 'train_omics.pt'
-val_omics_emb_path = EMBEDDINGS_PATH / 'val_omics.pt'
+MODELS_PATH = ROOT / "data/models"
 
 # Training loop
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -91,18 +90,21 @@ def train_epoch(loader, model, optimizer, criterion, device, logger):
     total_loss = 0
     batch_losses = []
 
-    for batch_idx, (x, y) in enumerate(loader):
-        x, y = x.to(device), y.to(device)
+    for batch_idx, (d1, d2, mrna, mirna, prot, y) in enumerate(loader):
+        # Move all inputs to device
+        d1, d2 = d1.to(device), d2.to(device)
+        mrna, mirna, prot = mrna.to(device), mirna.to(device), prot.to(device)
+        y = y.to(device)
 
         optimizer.zero_grad()
-        preds = model(x)
+        preds = model(d1, d2, mrna, mirna, prot)
         loss = criterion(preds, y)
 
         loss.backward()
         optimizer.step()
 
         batch_loss = loss.item()
-        total_loss += batch_loss * x.size(0)
+        total_loss += batch_loss * d1.size(0)
         batch_losses.append(batch_loss)
 
     avg_loss = total_loss / len(loader.dataset)
@@ -120,13 +122,17 @@ def eval_epoch(loader, model, criterion, device, logger):
     batch_losses = []
 
     with torch.no_grad():
-        for x, y in loader:
-            x, y = x.to(device), y.to(device)
-            preds = model(x)
+        for d1, d2, mrna, mirna, prot, y in loader:
+            # Move all inputs to device
+            d1, d2 = d1.to(device), d2.to(device)
+            mrna, mirna, prot = mrna.to(device), mirna.to(device), prot.to(device)
+            y = y.to(device)
+            
+            preds = model(d1, d2, mrna, mirna, prot)
             loss = criterion(preds, y)
             
             batch_loss = loss.item()
-            total_loss += batch_loss * x.size(0)
+            total_loss += batch_loss * d1.size(0)
             batch_losses.append(batch_loss)
 
     avg_loss = total_loss / len(loader.dataset)
@@ -137,10 +143,13 @@ def eval_epoch(loader, model, criterion, device, logger):
     return avg_loss
     
 def sanity_check(dataset, logger):
-    x, y = dataset[0]
-    logger.info(f"Sample input shape: {x.shape}")
-    logger.info(f"Sample target shape: {y.shape}")
-    logger.info(f"Input sample (first 10): {x[:10].tolist()}")
+    d1, d2, mrna, mirna, prot, y = dataset[0]
+    logger.info(f"Drug1 embedding shape: {d1.shape}")
+    logger.info(f"Drug2 embedding shape: {d2.shape}")
+    logger.info(f"mRNA shape: {mrna.shape}")
+    logger.info(f"miRNA shape: {mirna.shape}")
+    logger.info(f"Proteomics shape: {prot.shape}")
+    logger.info(f"Target shape: {y.shape}")
     logger.info(f"Target sample: {y.item()}")
     
 def plot_losses(train_losses, val_losses, num_epochs, run_dir, standardized, logger):
@@ -209,13 +218,41 @@ def save_checkpoint(model, optimizer, epoch, train_loss, val_loss, run_dir, is_b
         torch.save(checkpoint, best_path)
         logger.info(f"Best model saved at epoch {epoch+1} with val_loss: {val_loss:.4f}")
 
+
+def save_omics_encoder(model, run_dir, logger):
+    """Save trained OmicsFusionModel weights separately for future use"""
+    MODELS_PATH.mkdir(parents=True, exist_ok=True)
+    
+    # Save to both run directory and models directory
+    omics_encoder_state = model.omics_encoder.state_dict()
+    
+    # Save to run directory
+    run_path = run_dir / "omics_encoder.pt"
+    torch.save(omics_encoder_state, run_path)
+    
+    # Save to models directory (overwrite best)
+    models_path = MODELS_PATH / "omics_fusion_model_best.pt"
+    torch.save(omics_encoder_state, models_path)
+    
+    logger.info(f"OmicsFusionModel weights saved to {run_path}")
+    logger.info(f"OmicsFusionModel weights also saved to {models_path}")
+
 if __name__ == "__main__":
     # Setup logging
-    run_dir, logger = setup_logging(experiment_name="mlp")
+    run_dir, logger = setup_logging(experiment_name="synergy_attn")
     
     logger.info("="*80)
-    logger.info("Starting Drug Synergy Prediction Training")
+    logger.info("Starting Drug Synergy Prediction Training (End-to-End with Attention)")
     logger.info("="*80)
+    
+    # Create datasets first to get omics dimensions
+    logger.info("Loading datasets...")
+    train_dataset = DrugSynergyRawOmicsDataset(train_df, drug_emb_path, target_cols[0])
+    val_dataset = DrugSynergyRawOmicsDataset(val_df, drug_emb_path, target_cols[0])
+    logger.info("Datasets loaded successfully")
+    
+    # Get omics dimensions from dataset
+    mrna_dim, mirna_dim, prot_dim = train_dataset.get_omics_dims()
     
     # Configuration
     config = {
@@ -229,6 +266,10 @@ if __name__ == "__main__":
         "device": str(device),
         "train_samples": len(train_df),
         "val_samples": len(val_df),
+        "model": "SynergyModel (End-to-End with Attention)",
+        "mrna_dim": mrna_dim,
+        "mirna_dim": mirna_dim,
+        "prot_dim": prot_dim,
     }
     
     save_config(run_dir, config, logger)
@@ -240,17 +281,12 @@ if __name__ == "__main__":
     logger.info(f"Batch size: {config['batch_size']}")
     logger.info(f"Learning rate: {config['learning_rate']}")
     logger.info(f"Number of epochs: {config['num_epochs']}")
+    logger.info(f"Omics dimensions - mRNA: {mrna_dim}, miRNA: {mirna_dim}, Proteomics: {prot_dim}")
     
     # Standardize target col (optional)
     # scaler = StandardScaler()
     # train_df['Synergy_ZIP'] = scaler.fit_transform(train_df['Synergy_ZIP'].values.reshape(-1, 1))
     # val_df['Synergy_ZIP'] = scaler.transform(val_df['Synergy_ZIP'].values.reshape(-1, 1))
-
-    # Create datasets
-    logger.info("Loading datasets...")
-    train_dataset = DrugSynergyDataset(train_df, drug_emb_path, train_omics_emb_path, target_cols[0])
-    val_dataset = DrugSynergyDataset(val_df, drug_emb_path, val_omics_emb_path, target_cols[0])
-    logger.info("Datasets loaded successfully")
 
     # Sanity check
     logger.info("Running sanity check...")
@@ -264,8 +300,12 @@ if __name__ == "__main__":
     logger.info(f"Validation batches: {len(val_loader)}")
 
     # Model setup
-    logger.info("Initializing model...")
-    model = SynergyMLP().to(device)
+    logger.info("Initializing SynergyModel (End-to-End with Attention)...")
+    model = SynergyModel(
+        mrna_dim=mrna_dim,
+        mirna_dim=mirna_dim,
+        prot_dim=prot_dim
+    ).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=config['learning_rate'])
     criterion = nn.MSELoss()
     
@@ -322,6 +362,10 @@ if __name__ == "__main__":
     
     # Save final metrics
     save_metrics(run_dir, train_losses, val_losses, logger)
+    
+    # Save trained OmicsFusionModel weights separately
+    logger.info("Saving trained OmicsFusionModel weights...")
+    save_omics_encoder(model, run_dir, logger)
     
     # Plot losses
     logger.info("Generating loss plot...")

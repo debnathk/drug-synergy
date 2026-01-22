@@ -3,6 +3,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 import pickle
 from sklearn.preprocessing import StandardScaler
+import numpy as np
 
 from pathlib import Path
 from src.dataset import DrugSynergyRawOmicsDataset
@@ -11,12 +12,68 @@ from tqdm import tqdm
 import logging
 from datetime import datetime
 import json
+import argparse
 
 ROOT = Path(__file__).resolve().parent
 RAW_DATA_PATH = ROOT / "data/raw"
 EMBEDDINGS_PATH = ROOT / "data/embeddings"
 LOG_PATH = ROOT / "logs"
 ASSETS_PATH = ROOT / "assets"
+
+
+class TargetScaler:
+    """
+    Target standardization scaler that can be saved/loaded with checkpoints.
+    Standardizes targets to have mean=0, std=1 for better training stability.
+    """
+    def __init__(self):
+        self.mean = None
+        self.std = None
+        self.fitted = False
+    
+    def fit(self, targets):
+        """Fit scaler on training targets."""
+        targets = np.array(targets).flatten()
+        self.mean = float(np.mean(targets))
+        self.std = float(np.std(targets))
+        self.fitted = True
+        return self
+    
+    def transform(self, targets):
+        """Transform targets to standardized form."""
+        if not self.fitted:
+            raise RuntimeError("Scaler not fitted. Call fit() first.")
+        targets = np.array(targets).flatten()
+        return (targets - self.mean) / self.std
+    
+    def fit_transform(self, targets):
+        """Fit and transform in one step."""
+        self.fit(targets)
+        return self.transform(targets)
+    
+    def inverse_transform(self, standardized_targets):
+        """Convert standardized targets back to original scale."""
+        if not self.fitted:
+            raise RuntimeError("Scaler not fitted. Call fit() first.")
+        standardized_targets = np.array(standardized_targets).flatten()
+        return standardized_targets * self.std + self.mean
+    
+    def to_dict(self):
+        """Export scaler parameters for saving."""
+        return {
+            'mean': self.mean,
+            'std': self.std,
+            'fitted': self.fitted
+        }
+    
+    @classmethod
+    def from_dict(cls, params):
+        """Load scaler from saved parameters."""
+        scaler = cls()
+        scaler.mean = params['mean']
+        scaler.std = params['std']
+        scaler.fitted = params['fitted']
+        return scaler
 
 def setup_logging(experiment_name="mlp"):
     """
@@ -68,21 +125,11 @@ def save_metrics(run_dir: Path, train_losses: list, val_losses: list, logger: lo
         json.dump(metrics, f, indent=2)
     logger.info(f"Metrics saved to {metrics_file}")
 
-# Load your dataset
-with open(RAW_DATA_PATH / "train_split.pkl", 'rb') as file:
-    train_df = pickle.load(file)
-
-with open(RAW_DATA_PATH / "val_split.pkl", 'rb') as file:
-    val_df = pickle.load(file)
-
-# Define the target columns
-target_cols = ['Synergy_ZIP', 'Synergy_Bliss', 'Synergy_Loewe', 'Synergy_HSA']
-
 # Paths to embeddings
 drug_emb_path = EMBEDDINGS_PATH / 'drug_embeddings.pt'
 MODELS_PATH = ROOT / "data/models"
 
-# Training loop
+# Device setup
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def train_epoch(loader, model, optimizer, criterion, device, logger):
@@ -198,8 +245,9 @@ def plot_losses(train_losses, val_losses, num_epochs, run_dir, standardized, log
     logger.info(f"Loss plot saved to {plot_path_run}")
     logger.info(f"Loss plot also saved to {plot_path_assets}")
 
-def save_checkpoint(model, optimizer, epoch, train_loss, val_loss, run_dir, is_best, logger):
-    """Save model checkpoint"""
+def save_checkpoint(model, optimizer, epoch, train_loss, val_loss, run_dir, is_best, logger, 
+                    scaler=None, config=None):
+    """Save model checkpoint with optional scaler parameters."""
     checkpoint = {
         'epoch': epoch,
         'model_state_dict': model.state_dict(),
@@ -207,6 +255,14 @@ def save_checkpoint(model, optimizer, epoch, train_loss, val_loss, run_dir, is_b
         'train_loss': train_loss,
         'val_loss': val_loss,
     }
+    
+    # Save scaler parameters if standardization is used
+    if scaler is not None:
+        checkpoint['scaler'] = scaler.to_dict()
+    
+    # Save config for reference
+    if config is not None:
+        checkpoint['config'] = config
     
     # Save latest checkpoint
     checkpoint_path = run_dir / "checkpoint_latest.pt"
@@ -237,18 +293,66 @@ def save_omics_encoder(model, run_dir, logger):
     logger.info(f"OmicsFusionModel weights saved to {run_path}")
     logger.info(f"OmicsFusionModel weights also saved to {models_path}")
 
+def parse_args():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(description='Train Drug Synergy Prediction Model')
+    parser.add_argument('--standardize', action='store_true', default=False,
+                        help='Standardize target values (mean=0, std=1)')
+    parser.add_argument('--epochs', type=int, default=100,
+                        help='Number of training epochs')
+    parser.add_argument('--batch_size', type=int, default=64,
+                        help='Batch size for training')
+    parser.add_argument('--lr', type=float, default=1e-4,
+                        help='Learning rate')
+    parser.add_argument('--target', type=str, default='Synergy_ZIP',
+                        choices=['Synergy_ZIP', 'Synergy_Bliss', 'Synergy_Loewe', 'Synergy_HSA'],
+                        help='Target column to predict')
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    # Setup logging
-    run_dir, logger = setup_logging(experiment_name="synergy_attn")
+    # Parse arguments
+    args = parse_args()
+    
+    # Setup logging with experiment name reflecting standardization
+    exp_name = "synergy_attn_std" if args.standardize else "synergy_attn"
+    run_dir, logger = setup_logging(experiment_name=exp_name)
     
     logger.info("="*80)
     logger.info("Starting Drug Synergy Prediction Training (End-to-End with Attention)")
     logger.info("="*80)
     
-    # Create datasets first to get omics dimensions
+    # Load data
     logger.info("Loading datasets...")
-    train_dataset = DrugSynergyRawOmicsDataset(train_df, drug_emb_path, target_cols[0])
-    val_dataset = DrugSynergyRawOmicsDataset(val_df, drug_emb_path, target_cols[0])
+    with open(RAW_DATA_PATH / "train_split.pkl", 'rb') as file:
+        train_df = pickle.load(file)
+    with open(RAW_DATA_PATH / "val_split.pkl", 'rb') as file:
+        val_df = pickle.load(file)
+    
+    # Target standardization
+    target_scaler = None
+    if args.standardize:
+        logger.info("Applying target standardization...")
+        target_scaler = TargetScaler()
+        
+        # Fit on training data
+        original_train_targets = train_df[args.target].values.copy()
+        original_val_targets = val_df[args.target].values.copy()
+        
+        # Fit scaler on training data only
+        target_scaler.fit(original_train_targets)
+        
+        # Transform both train and val targets
+        train_df[args.target] = target_scaler.transform(original_train_targets)
+        val_df[args.target] = target_scaler.transform(original_val_targets)
+        
+        logger.info(f"Target scaler fitted - Mean: {target_scaler.mean:.4f}, Std: {target_scaler.std:.4f}")
+        logger.info(f"Original target range: [{original_train_targets.min():.2f}, {original_train_targets.max():.2f}]")
+        logger.info(f"Standardized target range: [{train_df[args.target].min():.2f}, {train_df[args.target].max():.2f}]")
+    
+    # Create datasets
+    train_dataset = DrugSynergyRawOmicsDataset(train_df, drug_emb_path, args.target)
+    val_dataset = DrugSynergyRawOmicsDataset(val_df, drug_emb_path, args.target)
     logger.info("Datasets loaded successfully")
     
     # Get omics dimensions from dataset
@@ -256,13 +360,13 @@ if __name__ == "__main__":
     
     # Configuration
     config = {
-        "num_epochs": 100,
-        "batch_size": 64,
-        "learning_rate": 1e-4,
+        "num_epochs": args.epochs,
+        "batch_size": args.batch_size,
+        "learning_rate": args.lr,
         "optimizer": "AdamW",
         "criterion": "MSELoss",
-        "target_column": target_cols[0],
-        "standardize_targets": False,
+        "target_column": args.target,
+        "standardize_targets": args.standardize,
         "device": str(device),
         "train_samples": len(train_df),
         "val_samples": len(val_df),
@@ -272,21 +376,22 @@ if __name__ == "__main__":
         "prot_dim": prot_dim,
     }
     
+    # Add scaler params to config if standardizing
+    if target_scaler is not None:
+        config["scaler_mean"] = target_scaler.mean
+        config["scaler_std"] = target_scaler.std
+    
     save_config(run_dir, config, logger)
     
     logger.info(f"Device: {device}")
     logger.info(f"Training samples: {len(train_df)}")
     logger.info(f"Validation samples: {len(val_df)}")
     logger.info(f"Target column: {config['target_column']}")
+    logger.info(f"Target standardization: {config['standardize_targets']}")
     logger.info(f"Batch size: {config['batch_size']}")
     logger.info(f"Learning rate: {config['learning_rate']}")
     logger.info(f"Number of epochs: {config['num_epochs']}")
     logger.info(f"Omics dimensions - mRNA: {mrna_dim}, miRNA: {mirna_dim}, Proteomics: {prot_dim}")
-    
-    # Standardize target col (optional)
-    # scaler = StandardScaler()
-    # train_df['Synergy_ZIP'] = scaler.fit_transform(train_df['Synergy_ZIP'].values.reshape(-1, 1))
-    # val_df['Synergy_ZIP'] = scaler.transform(val_df['Synergy_ZIP'].values.reshape(-1, 1))
 
     # Sanity check
     logger.info("Running sanity check...")
@@ -340,7 +445,8 @@ if __name__ == "__main__":
 
         # Save checkpoint every 10 epochs or if best
         if (epoch + 1) % 10 == 0 or is_best:
-            save_checkpoint(model, optimizer, epoch, train_loss, val_loss, run_dir, is_best, logger)
+            save_checkpoint(model, optimizer, epoch, train_loss, val_loss, run_dir, is_best, logger,
+                          scaler=target_scaler, config=config)
 
         pbar.set_postfix({
             "Epoch": f"{epoch+1:02d}", 
@@ -359,6 +465,12 @@ if __name__ == "__main__":
     logger.info(f"Final train loss: {train_losses[-1]:.4f}")
     logger.info(f"Final validation loss: {val_losses[-1]:.4f}")
     logger.info(f"Best validation loss: {best_val_loss:.4f}")
+    
+    # If standardized, also report in original scale
+    if target_scaler is not None:
+        # For MSE, need to multiply by std^2 to get original scale MSE
+        original_scale_best_val = best_val_loss * (target_scaler.std ** 2)
+        logger.info(f"Best validation loss (original scale): {original_scale_best_val:.4f}")
     
     # Save final metrics
     save_metrics(run_dir, train_losses, val_losses, logger)

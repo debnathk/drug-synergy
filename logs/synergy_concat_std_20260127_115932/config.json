@@ -1,0 +1,18 @@
+{
+  "num_epochs": 100,
+  "batch_size": 64,
+  "learning_rate": 0.0001,
+  "optimizer": "AdamW",
+  "criterion": "MSELoss",
+  "target_column": "Synergy_ZIP",
+  "standardize_targets": true,
+  "device": "cuda",
+  "train_samples": 207968,
+  "val_samples": 29710,
+  "model": "SynergyModel (End-to-End with Attention)",
+  "mrna_dim": 23808,
+  "mirna_dim": 627,
+  "prot_dim": 3171,
+  "scaler_mean": -0.842660694705407,
+  "scaler_std": 5.352419196184029
+}

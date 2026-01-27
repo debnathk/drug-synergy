@@ -124,56 +124,13 @@ class OmicsFusionModel(nn.Module):
         return fused_768
 
 
-class DrugOmicsCrossAttention(nn.Module):
-    """
-    Cross-attention module to fuse drug embeddings with omics embedding.
-    Learns how drugs and cell line omics interact.
-    """
-    def __init__(self, embed_dim=768, num_heads=8, dropout=0.1):
-        super().__init__()
-        self.num_heads = num_heads
-        self.self_attn = nn.MultiheadAttention(
-            embed_dim=embed_dim,
-            num_heads=num_heads,
-            dropout=dropout,
-            batch_first=True
-        )
-        self.norm = nn.LayerNorm(embed_dim)
-        self.dropout = nn.Dropout(dropout)
-
-    def forward(self, drug1_emb, drug2_emb, omics_emb, return_attention=False):
-        """
-        Args:
-            drug1_emb: Tensor of shape [batch, 768]
-            drug2_emb: Tensor of shape [batch, 768]
-            omics_emb: Tensor of shape [batch, 768]
-            return_attention: If True, also return attention weights
-        Returns:
-            Fused embedding of shape [batch, 768]
-            If return_attention: also returns attention weights [batch, num_heads, 3, 3]
-                Attention matrix indices: 0=Drug1, 1=Drug2, 2=Omics
-        """
-        # Stack as sequence: [drug1, drug2, omics] -> [batch, 3, 768]
-        seq = torch.stack([drug1_emb, drug2_emb, omics_emb], dim=1)
-
-        # Self-attention to learn interactions
-        attn_out, attn_weights = self.self_attn(seq, seq, seq, average_attn_weights=False)
-        attn_out = self.dropout(attn_out)
-        seq = self.norm(seq + attn_out)
-
-        # Mean pooling to get single representation
-        fused = seq.mean(dim=1)  # [batch, 768]
-        
-        if return_attention:
-            return fused, attn_weights  # attn_weights: [batch, num_heads, 3, 3]
-        return fused
 
 
 class SynergyModel(nn.Module):
     """
     End-to-end model for drug synergy prediction.
     Combines frozen drug embeddings with trainable omics encoder,
-    fuses them via cross-attention, and predicts synergy score.
+    fuses them via concatenation, and predicts synergy score.
     """
     def __init__(self, mrna_dim, mirna_dim, prot_dim, embed_dim=768):
         super().__init__()
@@ -181,12 +138,9 @@ class SynergyModel(nn.Module):
         # Trainable omics encoder: raw omics -> 768-dim embedding
         self.omics_encoder = OmicsFusionModel(mrna_dim, mirna_dim, prot_dim, out_dim=embed_dim)
 
-        # Cross-attention to fuse [drug1, drug2, omics]
-        self.cross_attn = DrugOmicsCrossAttention(embed_dim=embed_dim)
-
-        # Prediction head
+        # Prediction head - takes concatenated [drug1, drug2, omics] = 3 * embed_dim
         self.head = nn.Sequential(
-            nn.Linear(embed_dim, 512),
+            nn.Linear(embed_dim * 3, 512),  # 2304 -> 512
             nn.ReLU(),
             nn.Dropout(0.2),
             nn.Linear(512, 128),
@@ -202,14 +156,12 @@ class SynergyModel(nn.Module):
             mrna: Tensor of shape [batch, mrna_dim] - raw mRNA features
             mirna: Tensor of shape [batch, mirna_dim] - raw miRNA features
             prot: Tensor of shape [batch, prot_dim] - raw proteomics features
-            return_attention: If True, also return attention weights
+            return_attention: If True, also return attention weights (only omics fusion)
         Returns:
             Synergy prediction of shape [batch, 1]
             If return_attention: also returns dict with attention weights:
                 - 'omics_fusion': [batch, 4, 3, 3] - Omics modality attention
                     (indices: 0=mRNA, 1=miRNA, 2=Proteomics)
-                - 'cross_attention': [batch, 8, 3, 3] - Drug-Omics cross-attention
-                    (indices: 0=Drug1, 1=Drug2, 2=Omics)
         """
         # Encode raw omics to embedding
         if return_attention:
@@ -217,19 +169,15 @@ class SynergyModel(nn.Module):
         else:
             omics_emb = self.omics_encoder(mrna, mirna, prot)
 
-        # Fuse drug and omics embeddings via cross-attention
-        if return_attention:
-            fused, cross_attn = self.cross_attn(drug1_emb, drug2_emb, omics_emb, return_attention=True)
-        else:
-            fused = self.cross_attn(drug1_emb, drug2_emb, omics_emb)
+        # Concatenate drug and omics embeddings
+        fused = torch.cat([drug1_emb, drug2_emb, omics_emb], dim=1)  # [batch, 2304]
 
         # Predict synergy score
         output = self.head(fused)
         
         if return_attention:
             attention_weights = {
-                'omics_fusion': omics_attn,      # [batch, 4, 3, 3] - mRNA, miRNA, Proteomics
-                'cross_attention': cross_attn    # [batch, 8, 3, 3] - Drug1, Drug2, Omics
+                'omics_fusion': omics_attn  # [batch, 4, 3, 3] - mRNA, miRNA, Proteomics
             }
             return output, attention_weights
         

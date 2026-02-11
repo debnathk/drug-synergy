@@ -15,9 +15,12 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA_PATH = ROOT / "data"
 
 RAW_DATA_PATH = DATA_PATH / "raw"
+# Legacy flat paths (for backward compat when split_type subdirs not used)
 TRAIN_DATA_PATH = RAW_DATA_PATH / "train_split.pkl"
 VAL_DATA_PATH = RAW_DATA_PATH / "val_split.pkl"
 TEST_DATA_PATH = RAW_DATA_PATH / "test_split.pkl"
+
+SPLIT_TYPES = ("random", "cold_drug")
 
 # Dataset class
 class DrugSynergyDataset(Dataset):
@@ -87,32 +90,63 @@ class DrugSynergyRawOmicsDataset(Dataset):
         return d1, d2, mrna, mirna, prot, y
 
 
-def split_train_val_test():
+def split_train_val_test(split_type="random"):
+    """
+    Generate train/val/test splits for DrugComb and save as pkl.
 
-    # Load drug-synergy data
+    Args:
+        split_type: One of 'random', 'cold_drug'. Determines TDC split method and output subdir.
+    """
+    if split_type not in SPLIT_TYPES:
+        raise ValueError(f"split_type must be one of {SPLIT_TYPES}, got {split_type!r}")
+
     data = DrugSyn(name="DrugComb")
-    split = data.get_split()
-    # print(type(split['train']))
-
-    train_split, val_split, test_split = split['train'], split['valid'], split['test']
-    # print(f"Train shape: {train_split.shape}")
-    # print(f"Validation shape: {val_split.shape}")
-    # print(f"Test shape: {test_split.shape}")
-
-    if not TRAIN_DATA_PATH.exists():
-        train_split.to_pickle(TRAIN_DATA_PATH)
+    if split_type == "random":
+        split = data.get_split(method="random")
     else:
-        print(f'Train data already exists in {TRAIN_DATA_PATH}')
+        # cold_drug: hold out Drug1 entities so test has unseen drugs
+        split = data.get_split(method="cold_split", column_name="Drug1")
 
-    if not VAL_DATA_PATH.exists():
-        val_split.to_pickle(VAL_DATA_PATH)
-    else:
-        print(f'Validation data already exists in {VAL_DATA_PATH}')
+    train_split, val_split, test_split = split["train"], split["valid"], split["test"]
 
-    if not TEST_DATA_PATH.exists():
-        test_split.to_pickle(TEST_DATA_PATH)
+    out_dir = RAW_DATA_PATH / split_type
+    out_dir.mkdir(parents=True, exist_ok=True)
+    train_path = out_dir / "train_split.pkl"
+    val_path = out_dir / "val_split.pkl"
+    test_path = out_dir / "test_split.pkl"
+
+    if not train_path.exists():
+        train_split.to_pickle(train_path)
+        print(f"Saved train split ({split_type}) to {train_path}")
     else:
-        print(f'Test data already exists in {TEST_DATA_PATH}')
+        print(f"Train data already exists at {train_path}")
+
+    if not val_path.exists():
+        val_split.to_pickle(val_path)
+        print(f"Saved val split ({split_type}) to {val_path}")
+    else:
+        print(f"Validation data already exists at {val_path}")
+
+    if not test_path.exists():
+        test_split.to_pickle(test_path)
+        print(f"Saved test split ({split_type}) to {test_path}")
+    else:
+        print(f"Test data already exists at {test_path}")
+
 
 if __name__ == "__main__":
-    split_train_val_test()
+    import argparse
+    p = argparse.ArgumentParser(description="Generate DrugComb train/val/test splits")
+    p.add_argument(
+        "--split_type",
+        type=str,
+        default="all",
+        choices=["random", "cold_drug", "all"],
+        help="Which split type to generate (or 'all' for both)",
+    )
+    args = p.parse_args()
+    if args.split_type == "all":
+        for st in SPLIT_TYPES:
+            split_train_val_test(st)
+    else:
+        split_train_val_test(args.split_type)

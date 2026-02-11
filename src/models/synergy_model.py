@@ -1,11 +1,15 @@
 """
 Description: End-to-end synergy prediction model with trainable omics encoder
              and attention-based fusion of drug and omics embeddings.
+             Supports both MLP and KAN prediction heads.
 Author: Kusal Debnath
 """
 
 import torch
 import torch.nn as nn
+
+from .mlp import SynergyMLP
+from .kan import SynergyKAN
 
 
 class OmicsEncoder(nn.Module):
@@ -131,22 +135,37 @@ class SynergyModel(nn.Module):
     End-to-end model for drug synergy prediction.
     Combines frozen drug embeddings with trainable omics encoder,
     fuses them via concatenation, and predicts synergy score.
+    
+    Supports both MLP and KAN prediction heads using SynergyMLP and SynergyKAN.
     """
-    def __init__(self, mrna_dim, mirna_dim, prot_dim, embed_dim=768):
+    def __init__(self, mrna_dim, mirna_dim, prot_dim, embed_dim=768, head_type="mlp", grid_size=5):
+        """
+        Args:
+            mrna_dim: Dimension of mRNA features
+            mirna_dim: Dimension of miRNA features
+            prot_dim: Dimension of proteomics features
+            embed_dim: Embedding dimension (default 768)
+            head_type: Type of prediction head - "mlp" or "kan" (default "mlp")
+            grid_size: Grid size for KAN layers (only used if head_type="kan")
+        """
         super().__init__()
+        
+        self.head_type = head_type
 
         # Trainable omics encoder: raw omics -> 768-dim embedding
         self.omics_encoder = OmicsFusionModel(mrna_dim, mirna_dim, prot_dim, out_dim=embed_dim)
 
         # Prediction head - takes concatenated [drug1, drug2, omics] = 3 * embed_dim
-        self.head = nn.Sequential(
-            nn.Linear(embed_dim * 3, 512),  # 2304 -> 512
-            nn.ReLU(),
-            nn.Dropout(0.2),
-            nn.Linear(512, 128),
-            nn.ReLU(),
-            nn.Linear(128, 1)
-        )
+        input_dim = embed_dim * 3  # 2304
+        
+        if head_type == "mlp":
+            # Use ready-made SynergyMLP: 2304 -> 1024 -> 256 -> 1
+            self.head = SynergyMLP(input_dim=input_dim, output_dim=1)
+        elif head_type == "kan":
+            # Use ready-made SynergyKAN: 2304 -> 128 -> 32 -> 1
+            self.head = SynergyKAN(input_dim=input_dim, output_dim=1, grid_size=grid_size)
+        else:
+            raise ValueError(f"Unknown head_type: {head_type}. Must be 'mlp' or 'kan'")
 
     def forward(self, drug1_emb, drug2_emb, mrna, mirna, prot, return_attention=False):
         """
@@ -172,7 +191,7 @@ class SynergyModel(nn.Module):
         # Concatenate drug and omics embeddings
         fused = torch.cat([drug1_emb, drug2_emb, omics_emb], dim=1)  # [batch, 2304]
 
-        # Predict synergy score
+        # Predict synergy score using the selected head (MLP or KAN)
         output = self.head(fused)
         
         if return_attention:

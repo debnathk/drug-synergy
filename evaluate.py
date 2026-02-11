@@ -22,11 +22,30 @@ import pandas as pd
 from src.dataset import DrugSynergyRawOmicsDataset, DrugSynergyDataset
 from src.models.synergy_model import SynergyModel
 from src.models.mlp import SynergyMLP
+from src.utils import compute_metrics_with_std, format_metrics_table_pretty
 
 ROOT = Path(__file__).resolve().parent
 RAW_DATA_PATH = ROOT / "data/raw"
 EMBEDDINGS_PATH = ROOT / "data/embeddings"
 LOG_PATH = ROOT / "logs"
+
+
+def get_raw_path(split_type: str) -> Path:
+    """Resolve raw data directory: raw/<split_type>/ or flat raw/ for backward compat."""
+    subdir = RAW_DATA_PATH / split_type
+    flat_train = RAW_DATA_PATH / "train_split.pkl"
+    if subdir.exists() and (subdir / "train_split.pkl").exists():
+        return subdir
+    if split_type == "random" and flat_train.exists():
+        return RAW_DATA_PATH
+    return subdir
+
+
+def get_drug_emb_path(split_type: str) -> Path:
+    """Resolve drug embeddings path; fallback to drug_embeddings.pt for backward compat."""
+    specific = EMBEDDINGS_PATH / f"drug_embeddings_{split_type}.pt"
+    default = EMBEDDINGS_PATH / "drug_embeddings.pt"
+    return specific if specific.exists() else default
 
 # Device setup
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -159,27 +178,36 @@ class TargetScaler:
 
 def load_synergy_model(checkpoint_path: Path, mrna_dim: int, mirna_dim: int, prot_dim: int):
     """Load SynergyModel from checkpoint. Returns model and scaler."""
+    checkpoint = torch.load(checkpoint_path, map_location=device)
+
+    # Extract head_type and grid_size from checkpoint config (if available)
+    config = checkpoint.get("config", {})
+    head_type = config.get("head_type", "mlp")
+    grid_size = config.get("grid_size", 5) or 5  # Handle None
+
     model = SynergyModel(
         mrna_dim=mrna_dim,
         mirna_dim=mirna_dim,
-        prot_dim=prot_dim
+        prot_dim=prot_dim,
+        head_type=head_type,
+        grid_size=grid_size,
     ).to(device)
-    
-    checkpoint = torch.load(checkpoint_path, map_location=device)
-    model.load_state_dict(checkpoint['model_state_dict'])
-    
+
+    model.load_state_dict(checkpoint["model_state_dict"])
+
     # Load scaler if available
     scaler = TargetScaler.from_checkpoint(checkpoint)
-    
+
     print(f"Loaded SynergyModel from {checkpoint_path}")
     print(f"  - Checkpoint epoch: {checkpoint.get('epoch', 'N/A')}")
     print(f"  - Checkpoint val_loss: {checkpoint.get('val_loss', 'N/A'):.4f}")
-    
+    print(f"  - Head type: {head_type}" + (f", grid_size={grid_size}" if head_type == "kan" else ""))
+
     if scaler.fitted:
         print(f"  - Target standardization: Yes (mean={scaler.mean:.4f}, std={scaler.std:.4f})")
     else:
         print(f"  - Target standardization: No")
-    
+
     return model, scaler
 
 
@@ -259,11 +287,17 @@ def main():
     parser.add_argument('--split', type=str, default='test',
                         choices=['train', 'val', 'test'],
                         help='Dataset split to evaluate on')
+    parser.add_argument('--split_type', type=str, default='random',
+                        choices=['random', 'cold_drug'],
+                        help='Data split type (must match training): random or cold_drug')
+    parser.add_argument('--target', type=str, default='Synergy_ZIP',
+                        choices=['Synergy_ZIP', 'Synergy_Bliss', 'Synergy_Loewe', 'Synergy_HSA'],
+                        help='Target column to evaluate (must match training): Synergy_ZIP, Synergy_Bliss, Synergy_Loewe, or Synergy_HSA')
     parser.add_argument('--batch_size', type=int, default=64,
                         help='Batch size for evaluation')
     parser.add_argument('--output_dir', type=str, default=None,
                         help='Directory to save results')
-    
+
     args = parser.parse_args()
     
     # Setup output directory
@@ -274,24 +308,28 @@ def main():
         output_dir = LOG_PATH / f"evaluation_{timestamp}"
     output_dir.mkdir(parents=True, exist_ok=True)
     
+    raw_path = get_raw_path(args.split_type)
+    drug_emb_path = get_drug_emb_path(args.split_type)
+
+    target_col = args.target
     print(f"Device: {device}")
-    print(f"Evaluation split: {args.split}")
+    print(f"Split type: {args.split_type}, evaluation split: {args.split}, target: {target_col}")
     print(f"Output directory: {output_dir}")
-    
+
     # Load data
     print("\nLoading data...")
-    data_path = RAW_DATA_PATH / f"{args.split}_split.pkl"
-    with open(data_path, 'rb') as f:
+    data_path = raw_path / f"{args.split}_split.pkl"
+    with open(data_path, "rb") as f:
         eval_df = pickle.load(f)
-    print(f"Loaded {len(eval_df)} samples from {args.split} split")
-    
+    print(f"Loaded {len(eval_df)} samples from {args.split} split (raw path: {raw_path})")
+
     # Paths
-    drug_emb_path = EMBEDDINGS_PATH / 'drug_embeddings.pt'
     omics_emb_path = EMBEDDINGS_PATH / f'{args.split}_omics.pt'
-    target_col = 'Synergy_ZIP'
-    
+
     results = {
         'split': args.split,
+        'split_type': args.split_type,
+        'target': target_col,
         'num_samples': len(eval_df),
         'timestamp': datetime.now().isoformat()
     }
@@ -314,11 +352,21 @@ def main():
         if args.checkpoint:
             checkpoint_path = Path(args.checkpoint)
         else:
-            # Find the latest attention model checkpoint
-            attn_dirs = sorted(LOG_PATH.glob("synergy_attn_*"), reverse=True)
-            if not attn_dirs:
-                raise FileNotFoundError("No attention model checkpoint found!")
-            checkpoint_path = attn_dirs[0] / "checkpoint_best.pt"
+            # Find the latest SynergyModel checkpoint (supports various naming conventions)
+            # Covers: kan_std_random_*, mlp_std_random_*, synergy_kan_*, synergy_attn_*, synergy_mlp_*, etc.
+            checkpoint_candidates = []
+            for pattern in ["kan_*", "mlp_*", "synergy_kan_*", "synergy_attn_*", "synergy_mlp_*"]:
+                for d in LOG_PATH.glob(pattern):
+                    cp = d / "checkpoint_best.pt"
+                    if cp.exists():
+                        checkpoint_candidates.append(cp)
+            if not checkpoint_candidates:
+                raise FileNotFoundError(
+                    "No SynergyModel checkpoint found! Please provide --checkpoint or train a model first."
+                )
+            # Pick the most recently modified checkpoint
+            checkpoint_path = max(checkpoint_candidates, key=lambda p: p.stat().st_mtime)
+            print(f"Auto-detected checkpoint: {checkpoint_path}")
         
         attn_model, attn_scaler = load_synergy_model(checkpoint_path, mrna_dim, mirna_dim, prot_dim)
         
@@ -332,10 +380,13 @@ def main():
             y_pred = attn_scaler.inverse_transform(y_pred)
         
         attn_metrics = compute_metrics(y_true, y_pred)
-        
+        attn_metrics_with_std = compute_metrics_with_std(y_true, y_pred, n_bootstrap=200)
+
         print_metrics_table(attn_metrics, "SynergyModel (Attention)")
+        print(format_metrics_table_pretty(attn_metrics_with_std, "SynergyModel (Attention) - RMSE, SCC, PCC"))
         results['attention_model'] = {
             'metrics': attn_metrics,
+            'metrics_with_std': {k: list(v) for k, v in attn_metrics_with_std.items()},
             'checkpoint': str(checkpoint_path),
             'standardized': attn_scaler.fitted
         }
@@ -368,36 +419,40 @@ def main():
             mlp_dataset = DrugSynergyDataset(eval_df, drug_emb_path, omics_emb_path, target_col)
             mlp_loader = DataLoader(mlp_dataset, batch_size=args.batch_size, shuffle=False)
             
-            # Find MLP checkpoint
-            mlp_dirs = sorted(LOG_PATH.glob("synergy_mlp_*"), reverse=True)
-            if not mlp_dirs:
-                print("No MLP checkpoint found. Train MLP first with train_mlp.py")
+            # Find MLP checkpoint (search multiple naming patterns)
+            mlp_checkpoint_candidates = []
+            for pattern in ["synergy_mlp_*", "mlp_*"]:
+                for d in LOG_PATH.glob(pattern):
+                    cp = d / "checkpoint_best.pt"
+                    if cp.exists():
+                        mlp_checkpoint_candidates.append(cp)
+            if not mlp_checkpoint_candidates:
+                print("No MLP checkpoint found. Train MLP first.")
                 mlp_metrics = None
             else:
-                mlp_checkpoint_path = mlp_dirs[0] / "checkpoint_best.pt"
-                
-                if not mlp_checkpoint_path.exists():
-                    print(f"MLP checkpoint not found at {mlp_checkpoint_path}")
-                    mlp_metrics = None
-                else:
-                    mlp_model = load_mlp_model(mlp_checkpoint_path)
-                    
-                    # Evaluate
-                    y_true_mlp, y_pred_mlp = evaluate_mlp_model(mlp_model, mlp_loader, device)
-                    mlp_metrics = compute_metrics(y_true_mlp, y_pred_mlp)
-                    
-                    print_metrics_table(mlp_metrics, "SynergyMLP (Baseline)")
-                    results['mlp_baseline'] = {
-                        'metrics': mlp_metrics,
-                        'checkpoint': str(mlp_checkpoint_path)
-                    }
-                    
-                    # Save predictions
-                    mlp_preds_df = pd.DataFrame({
-                        'y_true': y_true_mlp,
-                        'y_pred': y_pred_mlp
-                    })
-                    mlp_preds_df.to_csv(output_dir / 'mlp_predictions.csv', index=False)
+                mlp_checkpoint_path = max(mlp_checkpoint_candidates, key=lambda p: p.stat().st_mtime)
+                print(f"Auto-detected MLP checkpoint: {mlp_checkpoint_path}")
+                mlp_model = load_mlp_model(mlp_checkpoint_path)
+
+                # Evaluate
+                y_true_mlp, y_pred_mlp = evaluate_mlp_model(mlp_model, mlp_loader, device)
+                mlp_metrics = compute_metrics(y_true_mlp, y_pred_mlp)
+                mlp_metrics_with_std = compute_metrics_with_std(y_true_mlp, y_pred_mlp, n_bootstrap=200)
+
+                print_metrics_table(mlp_metrics, "SynergyMLP (Baseline)")
+                print(format_metrics_table_pretty(mlp_metrics_with_std, "SynergyMLP (Baseline) - RMSE, SCC, PCC"))
+                results['mlp_baseline'] = {
+                    'metrics': mlp_metrics,
+                    'metrics_with_std': {k: list(v) for k, v in mlp_metrics_with_std.items()},
+                    'checkpoint': str(mlp_checkpoint_path)
+                }
+
+                # Save predictions
+                mlp_preds_df = pd.DataFrame({
+                    'y_true': y_true_mlp,
+                    'y_pred': y_pred_mlp
+                })
+                mlp_preds_df.to_csv(output_dir / 'mlp_predictions.csv', index=False)
     
     # Create comparison table
     if args.model == 'both':

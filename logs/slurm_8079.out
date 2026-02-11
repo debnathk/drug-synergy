@@ -1,0 +1,23 @@
+Job started on Thu Jan 29 04:41:47 PM EST 2026
+Device: NVIDIA A100-PCIE-40GB
+Saved train split (random) to /home/debnathk/drug-synergy/data/raw/random/train_split.pkl
+Saved val split (random) to /home/debnathk/drug-synergy/data/raw/random/val_split.pkl
+Saved test split (random) to /home/debnathk/drug-synergy/data/raw/random/test_split.pkl
+Saved train split (cold_drug) to /home/debnathk/drug-synergy/data/raw/cold_drug/train_split.pkl
+Saved val split (cold_drug) to /home/debnathk/drug-synergy/data/raw/cold_drug/val_split.pkl
+Saved test split (cold_drug) to /home/debnathk/drug-synergy/data/raw/cold_drug/test_split.pkl
+Drug embeddings type and shape: <class 'torch.Tensor'> ,torch.Size([768])
+Embeddings generated and saved to /home/debnathk/drug-synergy/data/embeddings/drug_embeddings_random.pt
+Drug embeddings type and shape: <class 'torch.Tensor'> ,torch.Size([768])
+Embeddings generated and saved to /home/debnathk/drug-synergy/data/embeddings/drug_embeddings_cold_drug.pt
+
+Best validation metrics (RMSE, SCC, PCC)
++--------+-----------------+
+| Metric |      Value      |
++--------+-----------------+
+|  RMSE  | 3.9992 (0.0288) |
+|  SCC   | 0.6196 (0.0037) |
+|  PCC   | 0.6683 (0.0048) |
++--------+-----------------+
+
+Job ended on Thu Jan 29 04:54:41 PM EST 2026

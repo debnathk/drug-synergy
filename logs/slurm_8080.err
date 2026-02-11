@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/home/debnathk/drug-synergy/evaluate.py", line 451, in <module>
+    main()
+  File "/home/debnathk/drug-synergy/evaluate.py", line 352, in main
+    attn_model, attn_scaler = load_synergy_model(checkpoint_path, mrna_dim, mirna_dim, prot_dim)
+  File "/home/debnathk/drug-synergy/evaluate.py", line 188, in load_synergy_model
+    model.load_state_dict(checkpoint['model_state_dict'])
+  File "/home/debnathk/.local/lib/python3.10/site-packages/torch/nn/modules/module.py", line 2189, in load_state_dict
+    raise RuntimeError('Error(s) in loading state_dict for {}:\n\t{}'.format(
+RuntimeError: Error(s) in loading state_dict for SynergyModel:
+	Missing key(s) in state_dict: "head.net.0.weight", "head.net.0.bias", "head.net.3.weight", "head.net.3.bias", "head.net.5.weight", "head.net.5.bias". 
+	Unexpected key(s) in state_dict: "cross_attn.self_attn.in_proj_weight", "cross_attn.self_attn.in_proj_bias", "cross_attn.self_attn.out_proj.weight", "cross_attn.self_attn.out_proj.bias", "cross_attn.norm.weight", "cross_attn.norm.bias", "head.0.weight", "head.0.bias", "head.3.weight", "head.3.bias", "head.5.weight", "head.5.bias". 

@@ -1,0 +1,106 @@
+2026-02-09 23:01:40 | INFO | Run directory: /home/debnathk/drug-synergy/logs/kan_std_random_Bliss_e100_20260209_230140
+2026-02-09 23:01:40 | INFO | Log file: /home/debnathk/drug-synergy/logs/kan_std_random_Bliss_e100_20260209_230140/training.log
+2026-02-09 23:01:40 | INFO | Script copied to /home/debnathk/drug-synergy/logs/kan_std_random_Bliss_e100_20260209_230140/main.py
+2026-02-09 23:01:40 | INFO | ================================================================================
+2026-02-09 23:01:40 | INFO | Starting Drug Synergy Prediction Training (KAN Head)
+2026-02-09 23:01:40 | INFO | ================================================================================
+2026-02-09 23:01:40 | INFO | Split type: random, raw path: /home/debnathk/drug-synergy/data/raw/random, drug embeddings: /home/debnathk/drug-synergy/data/embeddings/drug_embeddings_random.pt
+2026-02-09 23:01:40 | INFO | Loading datasets...
+2026-02-09 23:01:41 | INFO | Applying target standardization...
+2026-02-09 23:01:41 | INFO | Target scaler fitted - Mean: 0.1273, Std: 6.1044
+2026-02-09 23:01:41 | INFO | Original target range: [-74.03, 78.65]
+2026-02-09 23:01:41 | INFO | Standardized target range: [-12.15, 12.86]
+2026-02-09 23:01:41 | INFO | Datasets loaded successfully
+2026-02-09 23:01:41 | INFO | Configuration saved to /home/debnathk/drug-synergy/logs/kan_std_random_Bliss_e100_20260209_230140/config.json
+2026-02-09 23:01:41 | INFO | Device: cuda
+2026-02-09 23:01:41 | INFO | Training samples: 207968
+2026-02-09 23:01:41 | INFO | Validation samples: 29710
+2026-02-09 23:01:41 | INFO | Target column: Synergy_Bliss
+2026-02-09 23:01:41 | INFO | Target standardization: True
+2026-02-09 23:01:41 | INFO | Batch size: 64
+2026-02-09 23:01:41 | INFO | Learning rate: 0.0001
+2026-02-09 23:01:41 | INFO | Number of epochs: 100
+2026-02-09 23:01:41 | INFO | Omics dimensions - mRNA: 23808, miRNA: 627, Proteomics: 3171
+2026-02-09 23:01:41 | INFO | Running sanity check...
+2026-02-09 23:01:41 | INFO | Drug1 embedding shape: torch.Size([768])
+2026-02-09 23:01:41 | INFO | Drug2 embedding shape: torch.Size([768])
+2026-02-09 23:01:41 | INFO | mRNA shape: torch.Size([23808])
+2026-02-09 23:01:41 | INFO | miRNA shape: torch.Size([627])
+2026-02-09 23:01:41 | INFO | Proteomics shape: torch.Size([3171])
+2026-02-09 23:01:41 | INFO | Target shape: torch.Size([1])
+2026-02-09 23:01:41 | INFO | Target sample: -0.27908357977867126
+2026-02-09 23:01:41 | INFO | Train batches: 3250
+2026-02-09 23:01:41 | INFO | Validation batches: 465
+2026-02-09 23:01:41 | INFO | Initializing SynergyModel with KAN head...
+2026-02-09 23:01:41 | INFO | Total parameters: 20,599,532
+2026-02-09 23:01:41 | INFO | Trainable parameters: 20,599,532
+2026-02-09 23:01:41 | INFO | ================================================================================
+2026-02-09 23:01:41 | INFO | Starting Training
+2026-02-09 23:01:41 | INFO | ================================================================================
+2026-02-09 23:03:00 | INFO | Best model saved at epoch 1 with val_loss: 0.8001
+2026-02-09 23:04:19 | INFO | Best model saved at epoch 2 with val_loss: 0.6972
+2026-02-09 23:05:38 | INFO | Best model saved at epoch 3 with val_loss: 0.6570
+2026-02-09 23:06:57 | INFO | Best model saved at epoch 4 with val_loss: 0.6349
+2026-02-09 23:08:16 | INFO | Best model saved at epoch 5 with val_loss: 0.6205
+2026-02-09 23:09:35 | INFO | Best model saved at epoch 6 with val_loss: 0.6053
+2026-02-09 23:12:12 | INFO | Best model saved at epoch 8 with val_loss: 0.5814
+2026-02-09 23:13:31 | INFO | Best model saved at epoch 9 with val_loss: 0.5733
+2026-02-09 23:14:50 | INFO | Best model saved at epoch 10 with val_loss: 0.5683
+2026-02-09 23:14:50 | INFO | Epoch 010/100 | Train: 0.5164 | Val: 0.5683 | Best Val: 0.5683 | RMSE: 4.5991 | SCC: 0.5368 | PCC: 0.6649
+2026-02-09 23:16:09 | INFO | Best model saved at epoch 11 with val_loss: 0.5572
+2026-02-09 23:17:28 | INFO | Best model saved at epoch 12 with val_loss: 0.5482
+2026-02-09 23:18:47 | INFO | Best model saved at epoch 13 with val_loss: 0.5481
+2026-02-09 23:20:06 | INFO | Best model saved at epoch 14 with val_loss: 0.5450
+2026-02-09 23:21:26 | INFO | Best model saved at epoch 15 with val_loss: 0.5428
+2026-02-09 23:22:45 | INFO | Best model saved at epoch 16 with val_loss: 0.5374
+2026-02-09 23:24:04 | INFO | Best model saved at epoch 17 with val_loss: 0.5305
+2026-02-09 23:26:41 | INFO | Best model saved at epoch 19 with val_loss: 0.5240
+2026-02-09 23:28:00 | INFO | Epoch 020/100 | Train: 0.4211 | Val: 0.5261 | Best Val: 0.5240 | RMSE: 4.4298 | SCC: 0.5720 | PCC: 0.6976
+2026-02-09 23:29:19 | INFO | Best model saved at epoch 21 with val_loss: 0.5210
+2026-02-09 23:30:38 | INFO | Best model saved at epoch 22 with val_loss: 0.5200
+2026-02-09 23:31:57 | INFO | Best model saved at epoch 23 with val_loss: 0.5192
+2026-02-09 23:33:16 | INFO | Best model saved at epoch 24 with val_loss: 0.5140
+2026-02-09 23:34:35 | INFO | Best model saved at epoch 25 with val_loss: 0.5085
+2026-02-09 23:37:13 | INFO | Best model saved at epoch 27 with val_loss: 0.5083
+2026-02-09 23:39:50 | INFO | Best model saved at epoch 29 with val_loss: 0.5037
+2026-02-09 23:41:10 | INFO | Best model saved at epoch 30 with val_loss: 0.5026
+2026-02-09 23:41:10 | INFO | Epoch 030/100 | Train: 0.3670 | Val: 0.5026 | Best Val: 0.5026 | RMSE: 4.3297 | SCC: 0.5903 | PCC: 0.7148
+2026-02-09 23:46:24 | INFO | Best model saved at epoch 34 with val_loss: 0.5019
+2026-02-09 23:49:01 | INFO | Best model saved at epoch 36 with val_loss: 0.4975
+2026-02-09 23:54:15 | INFO | Epoch 040/100 | Train: 0.3314 | Val: 0.5017 | Best Val: 0.4975 | RMSE: 4.3287 | SCC: 0.5932 | PCC: 0.7142
+2026-02-09 23:59:29 | INFO | Best model saved at epoch 44 with val_loss: 0.4961
+2026-02-10 00:07:19 | INFO | Epoch 050/100 | Train: 0.3057 | Val: 0.4992 | Best Val: 0.4961 | RMSE: 4.3114 | SCC: 0.5952 | PCC: 0.7187
+2026-02-10 00:08:38 | INFO | Best model saved at epoch 51 with val_loss: 0.4930
+2026-02-10 00:13:53 | INFO | Best model saved at epoch 55 with val_loss: 0.4884
+2026-02-10 00:20:25 | INFO | Epoch 060/100 | Train: 0.2849 | Val: 0.5061 | Best Val: 0.4884 | RMSE: 4.3448 | SCC: 0.5946 | PCC: 0.7157
+2026-02-10 00:33:29 | INFO | Epoch 070/100 | Train: 0.2685 | Val: 0.5021 | Best Val: 0.4884 | RMSE: 4.3274 | SCC: 0.5962 | PCC: 0.7174
+2026-02-10 00:46:33 | INFO | Epoch 080/100 | Train: 0.2556 | Val: 0.5081 | Best Val: 0.4884 | RMSE: 4.3544 | SCC: 0.5954 | PCC: 0.7172
+2026-02-10 00:59:38 | INFO | Epoch 090/100 | Train: 0.2458 | Val: 0.5094 | Best Val: 0.4884 | RMSE: 4.3569 | SCC: 0.5949 | PCC: 0.7174
+2026-02-10 01:12:42 | INFO | Epoch 100/100 | Train: 0.2386 | Val: 0.5144 | Best Val: 0.4884 | RMSE: 4.3754 | SCC: 0.5897 | PCC: 0.7125
+2026-02-10 01:12:42 | INFO | ================================================================================
+2026-02-10 01:12:42 | INFO | Training Complete
+2026-02-10 01:12:42 | INFO | ================================================================================
+2026-02-10 01:12:42 | INFO | Final train loss: 0.2386
+2026-02-10 01:12:42 | INFO | Final validation loss: 0.5144
+2026-02-10 01:12:42 | INFO | Best validation loss: 0.4884
+2026-02-10 01:12:42 | INFO | Best validation loss (original scale): 18.2004
+2026-02-10 01:12:42 | INFO | 
+Best validation metrics (RMSE, SCC, PCC)
++--------+-------------+
+| Metric |    Value    |
++--------+-------------+
+|  RMSE  | 4.27 (0.03) |
+|  SCC   | 0.60 (0.00) |
+|  PCC   | 0.72 (0.01) |
++--------+-------------+
+
+2026-02-10 01:12:42 | INFO | Metrics saved to /home/debnathk/drug-synergy/logs/kan_std_random_Bliss_e100_20260209_230140/metrics.json
+2026-02-10 01:12:42 | INFO | Saving trained OmicsFusionModel weights...
+2026-02-10 01:12:43 | INFO | OmicsFusionModel weights saved to /home/debnathk/drug-synergy/logs/kan_std_random_Bliss_e100_20260209_230140/omics_encoder.pt
+2026-02-10 01:12:43 | INFO | OmicsFusionModel weights also saved to /home/debnathk/drug-synergy/data/models/omics_fusion_model_best.pt
+2026-02-10 01:12:43 | INFO | Generating loss plot...
+2026-02-10 01:12:43 | INFO | Loss plot saved to /home/debnathk/drug-synergy/logs/kan_std_random_Bliss_e100_20260209_230140/loss_plot_std.png
+2026-02-10 01:12:43 | INFO | Loss plot also saved to /home/debnathk/drug-synergy/assets/loss_plot_std.png
+2026-02-10 01:12:43 | INFO | ================================================================================
+2026-02-10 01:12:43 | INFO | All outputs saved to: /home/debnathk/drug-synergy/logs/kan_std_random_Bliss_e100_20260209_230140
+2026-02-10 01:12:43 | INFO | ================================================================================

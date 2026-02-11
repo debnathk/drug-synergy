@@ -8,6 +8,8 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import mean_squared_error
+from scipy import stats
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_PATH = ROOT / "data/raw"
@@ -20,6 +22,90 @@ with open(RAW_DATA_PATH / "train_split.pkl", 'rb') as file:
 
 with open(RAW_DATA_PATH / "val_split.pkl", 'rb') as file:
     val_df = pickle.load(file)
+
+
+def compute_regression_metrics(y_true, y_pred):
+    """
+    Compute RMSE, SCC (Spearman), and PCC (Pearson) for regression.
+
+    Args:
+        y_true: Ground truth (1D array-like).
+        y_pred: Predictions (1D array-like).
+
+    Returns:
+        dict with keys 'RMSE', 'SCC', 'PCC'.
+    """
+    y_true = np.asarray(y_true).flatten()
+    y_pred = np.asarray(y_pred).flatten()
+    rmse = float(np.sqrt(mean_squared_error(y_true, y_pred)))
+    pcc, _ = stats.pearsonr(y_true, y_pred)
+    scc, _ = stats.spearmanr(y_true, y_pred)
+    return {"RMSE": rmse, "SCC": float(scc), "PCC": float(pcc)}
+
+
+def compute_metrics_with_std(y_true, y_pred, n_bootstrap=200, seed=None):
+    """
+    Compute RMSE, SCC, PCC and their standard deviations via bootstrap.
+
+    Args:
+        y_true: Ground truth (1D array-like).
+        y_pred: Predictions (1D array-like).
+        n_bootstrap: Number of bootstrap samples.
+        seed: Random seed for reproducibility.
+
+    Returns:
+        dict with keys 'RMSE', 'SCC', 'PCC'; each value is (mean, std).
+    """
+    rng = np.random.default_rng(seed)
+    y_true = np.asarray(y_true).flatten()
+    y_pred = np.asarray(y_pred).flatten()
+    n = len(y_true)
+    if n < 2:
+        m = compute_regression_metrics(y_true, y_pred)
+        return {k: (v, 0.0) for k, v in m.items()}
+    rmse_list, scc_list, pcc_list = [], [], []
+    for _ in range(n_bootstrap):
+        idx = rng.integers(0, n, size=n)
+        yt, yp = y_true[idx], y_pred[idx]
+        rmse_list.append(np.sqrt(mean_squared_error(yt, yp)))
+        try:
+            pcc_list.append(stats.pearsonr(yt, yp)[0])
+            scc_list.append(stats.spearmanr(yt, yp)[0])
+        except Exception:
+            pcc_list.append(np.nan)
+            scc_list.append(np.nan)
+    return {
+        "RMSE": (float(np.nanmean(rmse_list)), float(np.nanstd(rmse_list))),
+        "SCC": (float(np.nanmean(scc_list)), float(np.nanstd(scc_list))),
+        "PCC": (float(np.nanmean(pcc_list)), float(np.nanstd(pcc_list))),
+    }
+
+
+def format_metrics_table_pretty(metrics_with_std, title="Validation metrics"):
+    """
+    Format RMSE, SCC, PCC with mean (std) as a PrettyTable string.
+
+    Args:
+        metrics_with_std: dict from compute_metrics_with_std, keys RMSE, SCC, PCC,
+                          values (mean, std).
+        title: Optional table title.
+
+    Returns:
+        Formatted string (PrettyTable if available, else plain text table).
+    """
+    try:
+        from prettytable import PrettyTable
+        pt = PrettyTable(["Metric", "Value"])
+        for name in ("RMSE", "SCC", "PCC"):
+            mean, std = metrics_with_std.get(name, (np.nan, 0.0))
+            pt.add_row([name, f"{mean:.2f} ({std:.2f})"])
+        return f"\n{title}\n{pt.get_string()}\n"
+    except ImportError:
+        lines = [f"\n{title}", "-" * 30]
+        for name in ("RMSE", "SCC", "PCC"):
+            mean, std = metrics_with_std.get(name, (np.nan, 0.0))
+            lines.append(f"  {name:<8} {mean:.2f} ({std:.2f})")
+        return "\n".join(lines) + "\n"
 
 
 def standardize(target_col):

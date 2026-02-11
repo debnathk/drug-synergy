@@ -27,6 +27,24 @@ EMBEDDINGS_PATH = ROOT / "data/embeddings"
 LOG_PATH = ROOT / "logs"
 ASSETS_PATH = ROOT / "assets"
 
+
+def get_raw_path(split_type: str) -> Path:
+    """Resolve raw data directory: raw/<split_type>/ or flat raw/ for backward compat."""
+    subdir = RAW_DATA_PATH / split_type
+    flat_train = RAW_DATA_PATH / "train_split.pkl"
+    if subdir.exists() and (subdir / "train_split.pkl").exists():
+        return subdir
+    if split_type == "random" and flat_train.exists():
+        return RAW_DATA_PATH
+    return subdir
+
+
+def get_drug_emb_path(split_type: str) -> Path:
+    """Resolve drug embeddings path; fallback to drug_embeddings.pt for backward compat."""
+    specific = EMBEDDINGS_PATH / f"drug_embeddings_{split_type}.pt"
+    default = EMBEDDINGS_PATH / "drug_embeddings.pt"
+    return specific if specific.exists() else default
+
 # Device setup
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -403,6 +421,9 @@ def main():
     parser.add_argument('--split', type=str, default='val',
                         choices=['train', 'val', 'test'],
                         help='Dataset split to analyze')
+    parser.add_argument('--split_type', type=str, default='random',
+                        choices=['random', 'cold_drug'],
+                        help='Data split type (must match training): random or cold_drug')
     parser.add_argument('--num_samples', type=int, default=1000,
                         help='Number of samples to analyze (None for all)')
     parser.add_argument('--batch_size', type=int, default=64,
@@ -420,19 +441,21 @@ def main():
         output_dir = LOG_PATH / f"attention_analysis_{timestamp}"
     output_dir.mkdir(parents=True, exist_ok=True)
     
+    raw_path = get_raw_path(args.split_type)
+    drug_emb_path = get_drug_emb_path(args.split_type)
+
     print(f"Device: {device}")
-    print(f"Analysis split: {args.split}")
+    print(f"Split type: {args.split_type}, analysis split: {args.split}")
     print(f"Output directory: {output_dir}")
-    
+
     # Load data
     print("\nLoading data...")
-    data_path = RAW_DATA_PATH / f"{args.split}_split.pkl"
-    with open(data_path, 'rb') as f:
+    data_path = raw_path / f"{args.split}_split.pkl"
+    with open(data_path, "rb") as f:
         df = pickle.load(f)
-    print(f"Loaded {len(df)} samples")
-    
+    print(f"Loaded {len(df)} samples (raw path: {raw_path})")
+
     # Create dataset
-    drug_emb_path = EMBEDDINGS_PATH / 'drug_embeddings.pt'
     target_col = 'Synergy_ZIP'
     
     dataset = DrugSynergyRawOmicsDataset(df, drug_emb_path, target_col)

@@ -1,27 +1,45 @@
 """
 Description: Get embedding for all the unique drugs in DrugComb dataset
-Outcome: Embeddings of unique drugs as .pt
-Autor: Kusal Debnath
+Outcome: Embeddings of unique drugs as .pt (per split_type: drug_embeddings_<split_type>.pt)
+Author: Kusal Debnath
 """
 
 import torch
-from tdc.multi_pred import DrugSyn
 from tqdm import tqdm
 import numpy as np
 from pathlib import Path
-from models.language_model import MolFormerMLM
+import pickle
+import argparse
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_PATH = ROOT / "data"
+RAW_DATA_PATH = DATA_PATH / "raw"
+EMBEDDINGS_PATH = DATA_PATH / "embeddings"
 
-def main():
+# Use src.models for in-repo; fallback to models for legacy
+try:
+    from src.models.language_model import MolFormerMLM
+except ImportError:
+    from models.language_model import MolFormerMLM
 
-    # Load drug-synergy data
-    data = DrugSyn(name="DrugComb")
-    split = data.get_split()
-    # print(type(split['train']))
 
-    train_split, val_split, test_split = split['train'], split['valid'], split['test']
+def main(split_type="random"):
+    # Load train/val/test from pre-generated splits for this split_type
+    raw_dir = RAW_DATA_PATH / split_type
+    train_path = raw_dir / "train_split.pkl"
+    val_path = raw_dir / "val_split.pkl"
+    test_path = raw_dir / "test_split.pkl"
+    for p in (train_path, val_path, test_path):
+        if not p.exists():
+            raise FileNotFoundError(
+                f"Split file not found: {p}. Run: python -m src.dataset --split_type {split_type}"
+            )
+    with open(train_path, "rb") as f:
+        train_split = pickle.load(f)
+    with open(val_path, "rb") as f:
+        val_split = pickle.load(f)
+    with open(test_path, "rb") as f:
+        test_split = pickle.load(f)
     # print(f"Train shape: {train_split.shape}")
     # print(f"Validation shape: {val_split.shape}")
     # print(f"Test shape: {test_split.shape}")
@@ -75,11 +93,20 @@ def main():
         "dim": next(iter(drug_embeddings_dict.values())).shape[0]
     }
 
-    torch.save(embeddings_info, str(DATA_PATH / "embeddings/drug_embeddings.pt"))
-    print(f'Embeddings generated and saved in {str(DATA_PATH / "embeddings/drug_embeddings.pt")}')
+    out_path = EMBEDDINGS_PATH / f"drug_embeddings_{split_type}.pt"
+    EMBEDDINGS_PATH.mkdir(parents=True, exist_ok=True)
+    torch.save(embeddings_info, str(out_path))
+    print(f"Embeddings generated and saved to {out_path}")
+
 
 if __name__ == "__main__":
-    # if not Path(DATA_PATH / "embeddings/drug_embeddings.pt").exists():
-    main()
-    # else:
-        # print(f'Embeddings already generated and can be found in {str(DATA_PATH / "embeddings/embeddings.pt")}')
+    parser = argparse.ArgumentParser(description="Generate drug embeddings for DrugComb splits")
+    parser.add_argument(
+        "--split_type",
+        type=str,
+        default="random",
+        choices=["random", "cold_drug"],
+        help="Split type (must match pre-generated splits in data/raw/<split_type>/)",
+    )
+    args = parser.parse_args()
+    main(split_type=args.split_type)

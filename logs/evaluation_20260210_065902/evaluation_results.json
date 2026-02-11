@@ -1,0 +1,35 @@
+{
+  "split": "test",
+  "split_type": "cold_drug",
+  "target": "Synergy_Bliss",
+  "num_samples": 61723,
+  "timestamp": "2026-02-10T06:59:02.060166",
+  "attention_model": {
+    "metrics": {
+      "MSE": 35.29105758666992,
+      "RMSE": 5.940627709819049,
+      "MAE": 4.2371344566345215,
+      "R2": 0.11654108762741089,
+      "Pearson_r": 0.3643140292573631,
+      "Pearson_pval": 0.0,
+      "Spearman_r": 0.30968814118630783,
+      "Spearman_pval": 0.0
+    },
+    "metrics_with_std": {
+      "RMSE": [
+        5.937888113705714,
+        0.037987305745234026
+      ],
+      "SCC": [
+        0.3095890968605281,
+        0.0036828233279706697
+      ],
+      "PCC": [
+        0.36427184537556506,
+        0.00500441289937661
+      ]
+    },
+    "checkpoint": "/home/debnathk/drug-synergy/logs/mlp_std_cold_drug_Bliss_e100_20260210_051159/checkpoint_best.pt",
+    "standardized": true
+  }
+}

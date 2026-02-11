@@ -1,0 +1,35 @@
+{
+  "split": "test",
+  "split_type": "cold_drug",
+  "target": "Synergy_ZIP",
+  "num_samples": 61723,
+  "timestamp": "2026-02-11T05:37:11.179992",
+  "attention_model": {
+    "metrics": {
+      "MSE": 25.44586944580078,
+      "RMSE": 5.044389898273208,
+      "MAE": 3.7413225173950195,
+      "R2": 0.1329936981201172,
+      "Pearson_r": 0.38031377345916056,
+      "Pearson_pval": 0.0,
+      "Spearman_r": 0.3509358476865091,
+      "Spearman_pval": 0.0
+    },
+    "metrics_with_std": {
+      "RMSE": [
+        5.043069087833086,
+        0.02489907614521451
+      ],
+      "SCC": [
+        0.3510371387204867,
+        0.0038756258369322533
+      ],
+      "PCC": [
+        0.38073541777839287,
+        0.0043451580206426395
+      ]
+    },
+    "checkpoint": "/home/debnathk/drug-synergy/logs/kan_std_cold_drug_ZIP_e100_20260211_033513/checkpoint_best.pt",
+    "standardized": true
+  }
+}

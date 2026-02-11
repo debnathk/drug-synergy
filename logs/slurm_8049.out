@@ -1,0 +1,19 @@
+Job started on Tue Jan 27 02:20:23 PM EST 2026
+Device: NVIDIA A100-PCIE-40GB
+============================================================
+Drug Synergy Experiment Launcher
+============================================================
+
+Experiment folder: /home/debnathk/drug-synergy/experiments/kan_baseline_20260127_142025
+Copied main.py to experiment folder
+Copied run_main.sh to experiment folder
+
+Running experiment in: /home/debnathk/drug-synergy/experiments/kan_baseline_20260127_142025
+Command: /home/debnathk/miniconda/envs/aidd/bin/python /home/debnathk/drug-synergy/experiments/kan_baseline_20260127_142025/main.py --standardize --epochs 100 --batch_size 64 --lr 0.0001 --target Synergy_ZIP --head_type kan --grid_size 5
+
+
+============================================================
+Experiment failed with return code: 1
+All outputs saved to: /home/debnathk/drug-synergy/experiments/kan_baseline_20260127_142025
+============================================================
+Job ended on Tue Jan 27 02:20:27 PM EST 2026

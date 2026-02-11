@@ -100,12 +100,7 @@ class KANLinear(nn.Module):
                 * self.scale_noise
                 / self.grid_size
             )
-            self.spline_weight.data.copy_(
-                self.scale_spline * self.curve2coeff(
-                    torch.linspace(-1, 1, self.in_features).unsqueeze(0),
-                    noise
-                )
-            )
+            self.spline_weight.data.copy_(self.scale_spline * noise)
             
             if self.enable_standalone_scale_spline:
                 nn.init.kaiming_uniform_(self.spline_scaler, a=math.sqrt(5) * self.scale_spline)

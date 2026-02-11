@@ -1,0 +1,11 @@
+2026-01-27 14:40:07 | INFO | Run directory: /home/debnathk/logs/kan_std_20260127_144007
+2026-01-27 14:40:07 | INFO | Log file: /home/debnathk/logs/kan_std_20260127_144007/training.log
+2026-01-27 14:40:07 | INFO | Script copied to /home/debnathk/logs/kan_std_20260127_144007/main.py
+2026-01-27 14:40:07 | INFO | ================================================================================
+2026-01-27 14:40:07 | INFO | Starting Drug Synergy Prediction Training (KAN Head)
+2026-01-27 14:40:07 | INFO | ================================================================================
+2026-01-27 14:40:07 | INFO | Loading datasets...
+Traceback (most recent call last):
+  File "/home/debnathk/drug-synergy/main.py", line 352, in <module>
+    with open(RAW_DATA_PATH / "train_split.pkl", 'rb') as file:
+FileNotFoundError: [Errno 2] No such file or directory: '/home/debnathk/data/raw/train_split.pkl'

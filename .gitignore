@@ -1,6 +1,7 @@
 archive
 data
 test
+docs
 *.csv
 *.txt
 *.zip

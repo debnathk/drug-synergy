@@ -28,20 +28,49 @@ python -c "import torch; print('Device:', torch.cuda.get_device_name(0))"
 # KAN head, standardize target, 10 epochs, random split
 # python main.py --exp_name kan_std_random --standardize --head_type kan --epochs 100 --split_type random
 
+# Run all experiments after simplifying omics projection
+# for target in Synergy_ZIP Synergy_HSA Synergy_Bliss Synergy_Loewe; do
+#   for head in kan mlp; do
+#     for split in random cold_drug; do
+#       exp_name="${head}_std_CLS_${split}_${target}_e100"
+#       echo "====== TRAIN: $exp_name ======"
+#       python main.py --exp_name $exp_name --standardize --head_type $head --epochs 100 --split_type $split --target $target
+#       echo "====== EVAL: $exp_name ======"
+#       python evaluate.py --target $target --split_type $split --split test
+#       echo ""
+#     done
+#   done
+# done
+
+for target in Synergy_ZIP Synergy_HSA Synergy_Bliss; do
+  for head in mlp; do
+    for split in cold_drug; do
+      exp_name="${head}_std_CLS_${split}_${target}_e100"
+      echo "====== TRAIN: $exp_name ======"
+      python main.py --exp_name $exp_name --standardize --head_type $head --epochs 100 --split_type $split --target $target
+      wait
+      echo "====== EVAL: $exp_name ======"
+      python evaluate.py --target $target --split_type $split --split test
+      echo ""
+    done
+  done
+done
+
+
 # ZIP
 # KAN
-python main.py --exp_name kan_std_random_ZIP_e100 --standardize --head_type kan --epochs 100 --split_type random --target Synergy_ZIP
-python evaluate.py --target Synergy_ZIP --split_type random --split test
+# python main.py --exp_name kan_std_random_ZIP_e100 --standardize --head_type kan --epochs 100 --split_type random --target Synergy_ZIP # First run after simplifying omics projection
+# python evaluate.py --target Synergy_ZIP --split_type random --split test
 
-python main.py --exp_name kan_std_cold_drug_ZIP_e100 --standardize --head_type kan --epochs 100 --split_type cold_drug --target Synergy_ZIP
-python evaluate.py --target Synergy_ZIP --split_type cold_drug --split test
+# python main.py --exp_name kan_std_cold_drug_ZIP_e100 --standardize --head_type kan --epochs 100 --split_type cold_drug --target Synergy_ZIP
+# python evaluate.py --target Synergy_ZIP --split_type cold_drug --split test
 
 # MLP
-python main.py --exp_name mlp_std_random_ZIP_e100 --standardize --head_type mlp --epochs 100 --split_type random --target Synergy_ZIP
-python evaluate.py --target Synergy_ZIP --split_type random --split test
+# python main.py --exp_name mlp_std_random_ZIP_e100 --standardize --head_type mlp --epochs 100 --split_type random --target Synergy_ZIP
+# python evaluate.py --target Synergy_ZIP --split_type random --split test
 
-python main.py --exp_name mlp_std_cold_drug_ZIP_e100 --standardize --head_type mlp --epochs 100 --split_type cold_drug --target Synergy_ZIP
-python evaluate.py --target Synergy_ZIP --split_type cold_drug --split test
+# python main.py --exp_name mlp_std_cold_drug_ZIP_e100 --standardize --head_type mlp --epochs 100 --split_type cold_drug --target Synergy_ZIP
+# python evaluate.py --target Synergy_ZIP --split_type cold_drug --split test
 
 # Loewe
 # KAN

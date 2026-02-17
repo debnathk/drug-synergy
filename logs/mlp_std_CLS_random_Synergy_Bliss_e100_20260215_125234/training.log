@@ -1,0 +1,109 @@
+2026-02-15 12:52:34 | INFO | Run directory: /home/debnathk/drug-synergy/logs/mlp_std_CLS_random_Synergy_Bliss_e100_20260215_125234
+2026-02-15 12:52:34 | INFO | Log file: /home/debnathk/drug-synergy/logs/mlp_std_CLS_random_Synergy_Bliss_e100_20260215_125234/training.log
+2026-02-15 12:52:34 | INFO | Script copied to /home/debnathk/drug-synergy/logs/mlp_std_CLS_random_Synergy_Bliss_e100_20260215_125234/main.py
+2026-02-15 12:52:34 | INFO | ================================================================================
+2026-02-15 12:52:34 | INFO | Starting Drug Synergy Prediction Training (MLP Head)
+2026-02-15 12:52:34 | INFO | ================================================================================
+2026-02-15 12:52:34 | INFO | Split type: random, raw path: /home/debnathk/drug-synergy/data/raw/random, drug embeddings: /home/debnathk/drug-synergy/data/embeddings/drug_embeddings_random.pt
+2026-02-15 12:52:34 | INFO | Loading datasets...
+2026-02-15 12:52:34 | INFO | Applying target standardization...
+2026-02-15 12:52:34 | INFO | Target scaler fitted - Mean: 0.1273, Std: 6.1044
+2026-02-15 12:52:34 | INFO | Original target range: [-74.03, 78.65]
+2026-02-15 12:52:34 | INFO | Standardized target range: [-12.15, 12.86]
+2026-02-15 12:52:34 | INFO | Datasets loaded successfully
+2026-02-15 12:52:34 | INFO | Configuration saved to /home/debnathk/drug-synergy/logs/mlp_std_CLS_random_Synergy_Bliss_e100_20260215_125234/config.json
+2026-02-15 12:52:34 | INFO | Device: cuda
+2026-02-15 12:52:34 | INFO | Training samples: 207968
+2026-02-15 12:52:34 | INFO | Validation samples: 29710
+2026-02-15 12:52:34 | INFO | Target column: Synergy_Bliss
+2026-02-15 12:52:34 | INFO | Target standardization: True
+2026-02-15 12:52:34 | INFO | Batch size: 64
+2026-02-15 12:52:34 | INFO | Learning rate: 0.0001
+2026-02-15 12:52:34 | INFO | Number of epochs: 100
+2026-02-15 12:52:34 | INFO | Omics dimensions - mRNA: 23808, miRNA: 627, Proteomics: 3171
+2026-02-15 12:52:34 | INFO | Running sanity check...
+2026-02-15 12:52:34 | INFO | Drug1 embedding shape: torch.Size([768])
+2026-02-15 12:52:34 | INFO | Drug2 embedding shape: torch.Size([768])
+2026-02-15 12:52:34 | INFO | mRNA shape: torch.Size([23808])
+2026-02-15 12:52:34 | INFO | miRNA shape: torch.Size([627])
+2026-02-15 12:52:34 | INFO | Proteomics shape: torch.Size([3171])
+2026-02-15 12:52:34 | INFO | Target shape: torch.Size([1])
+2026-02-15 12:52:34 | INFO | Target sample: -0.27908357977867126
+2026-02-15 12:52:34 | INFO | Train batches: 3250
+2026-02-15 12:52:34 | INFO | Validation batches: 465
+2026-02-15 12:52:34 | INFO | Initializing SynergyModel with MLP head...
+2026-02-15 12:52:35 | INFO | Total parameters: 17,671,853
+2026-02-15 12:52:35 | INFO | Trainable parameters: 17,671,853
+2026-02-15 12:52:35 | INFO | ================================================================================
+2026-02-15 12:52:35 | INFO | Starting Training
+2026-02-15 12:52:35 | INFO | ================================================================================
+2026-02-15 12:53:35 | INFO | Best model saved at epoch 1 with val_loss: 0.7337
+2026-02-15 12:54:35 | INFO | Best model saved at epoch 2 with val_loss: 0.6870
+2026-02-15 12:55:35 | INFO | Best model saved at epoch 3 with val_loss: 0.6462
+2026-02-15 12:56:35 | INFO | Best model saved at epoch 4 with val_loss: 0.6157
+2026-02-15 12:57:35 | INFO | Best model saved at epoch 5 with val_loss: 0.6044
+2026-02-15 12:58:35 | INFO | Best model saved at epoch 6 with val_loss: 0.5856
+2026-02-15 12:59:35 | INFO | Best model saved at epoch 7 with val_loss: 0.5750
+2026-02-15 13:00:35 | INFO | Best model saved at epoch 8 with val_loss: 0.5632
+2026-02-15 13:01:36 | INFO | Best model saved at epoch 9 with val_loss: 0.5539
+2026-02-15 13:02:36 | INFO | Best model saved at epoch 10 with val_loss: 0.5428
+2026-02-15 13:02:36 | INFO | Epoch 010/100 | Train: 0.5073 | Val: 0.5428 | Best Val: 0.5428 | RMSE: 4.4971 | SCC: 0.5621 | PCC: 0.6832
+2026-02-15 13:03:36 | INFO | Best model saved at epoch 11 with val_loss: 0.5250
+2026-02-15 13:04:36 | INFO | Best model saved at epoch 12 with val_loss: 0.5224
+2026-02-15 13:05:37 | INFO | Best model saved at epoch 13 with val_loss: 0.5119
+2026-02-15 13:07:37 | INFO | Best model saved at epoch 15 with val_loss: 0.4953
+2026-02-15 13:09:37 | INFO | Best model saved at epoch 17 with val_loss: 0.4855
+2026-02-15 13:10:37 | INFO | Best model saved at epoch 18 with val_loss: 0.4842
+2026-02-15 13:11:37 | INFO | Best model saved at epoch 19 with val_loss: 0.4787
+2026-02-15 13:12:37 | INFO | Epoch 020/100 | Train: 0.4011 | Val: 0.4821 | Best Val: 0.4787 | RMSE: 4.2409 | SCC: 0.6093 | PCC: 0.7278
+2026-02-15 13:13:37 | INFO | Best model saved at epoch 21 with val_loss: 0.4678
+2026-02-15 13:14:37 | INFO | Best model saved at epoch 22 with val_loss: 0.4677
+2026-02-15 13:15:38 | INFO | Best model saved at epoch 23 with val_loss: 0.4643
+2026-02-15 13:16:38 | INFO | Best model saved at epoch 24 with val_loss: 0.4618
+2026-02-15 13:18:38 | INFO | Best model saved at epoch 26 with val_loss: 0.4611
+2026-02-15 13:19:38 | INFO | Best model saved at epoch 27 with val_loss: 0.4511
+2026-02-15 13:21:38 | INFO | Best model saved at epoch 29 with val_loss: 0.4486
+2026-02-15 13:22:38 | INFO | Best model saved at epoch 30 with val_loss: 0.4445
+2026-02-15 13:22:38 | INFO | Epoch 030/100 | Train: 0.3375 | Val: 0.4445 | Best Val: 0.4445 | RMSE: 4.0658 | SCC: 0.6332 | PCC: 0.7509
+2026-02-15 13:28:36 | INFO | Best model saved at epoch 36 with val_loss: 0.4374
+2026-02-15 13:31:36 | INFO | Best model saved at epoch 39 with val_loss: 0.4341
+2026-02-15 13:32:36 | INFO | Epoch 040/100 | Train: 0.2982 | Val: 0.4363 | Best Val: 0.4341 | RMSE: 4.0308 | SCC: 0.6394 | PCC: 0.7557
+2026-02-15 13:35:36 | INFO | Best model saved at epoch 43 with val_loss: 0.4331
+2026-02-15 13:36:36 | INFO | Best model saved at epoch 44 with val_loss: 0.4303
+2026-02-15 13:42:34 | INFO | Epoch 050/100 | Train: 0.2683 | Val: 0.4335 | Best Val: 0.4303 | RMSE: 4.0192 | SCC: 0.6453 | PCC: 0.7586
+2026-02-15 13:45:33 | INFO | Best model saved at epoch 53 with val_loss: 0.4269
+2026-02-15 13:52:30 | INFO | Epoch 060/100 | Train: 0.2472 | Val: 0.4309 | Best Val: 0.4269 | RMSE: 4.0066 | SCC: 0.6458 | PCC: 0.7593
+2026-02-15 13:53:30 | INFO | Best model saved at epoch 61 with val_loss: 0.4255
+2026-02-15 13:54:31 | INFO | Best model saved at epoch 62 with val_loss: 0.4245
+2026-02-15 13:58:30 | INFO | Best model saved at epoch 66 with val_loss: 0.4195
+2026-02-15 14:02:29 | INFO | Epoch 070/100 | Train: 0.2304 | Val: 0.4317 | Best Val: 0.4195 | RMSE: 4.0094 | SCC: 0.6497 | PCC: 0.7596
+2026-02-15 14:12:26 | INFO | Epoch 080/100 | Train: 0.2194 | Val: 0.4279 | Best Val: 0.4195 | RMSE: 3.9924 | SCC: 0.6482 | PCC: 0.7618
+2026-02-15 14:22:23 | INFO | Epoch 090/100 | Train: 0.2082 | Val: 0.4301 | Best Val: 0.4195 | RMSE: 4.0046 | SCC: 0.6490 | PCC: 0.7602
+2026-02-15 14:32:20 | INFO | Epoch 100/100 | Train: 0.2019 | Val: 0.4272 | Best Val: 0.4195 | RMSE: 3.9860 | SCC: 0.6513 | PCC: 0.7621
+2026-02-15 14:32:20 | INFO | ================================================================================
+2026-02-15 14:32:20 | INFO | Training Complete
+2026-02-15 14:32:20 | INFO | ================================================================================
+2026-02-15 14:32:20 | INFO | Final train loss: 0.2019
+2026-02-15 14:32:20 | INFO | Final validation loss: 0.4272
+2026-02-15 14:32:20 | INFO | Best validation loss: 0.4195
+2026-02-15 14:32:20 | INFO | Best validation loss (original scale): 15.6309
+2026-02-15 14:32:20 | INFO | 
+Best validation metrics (RMSE, SCC, PCC)
++--------+-------------+
+| Metric |    Value    |
++--------+-------------+
+|  RMSE  | 3.95 (0.03) |
+|  SCC   | 0.65 (0.00) |
+|  PCC   | 0.77 (0.00) |
++--------+-------------+
+
+2026-02-15 14:32:20 | INFO | Metrics saved to /home/debnathk/drug-synergy/logs/mlp_std_CLS_random_Synergy_Bliss_e100_20260215_125234/metrics.json
+2026-02-15 14:32:20 | INFO | Saving trained OmicsFusionModel weights...
+2026-02-15 14:32:20 | INFO | OmicsFusionModel weights saved to /home/debnathk/drug-synergy/logs/mlp_std_CLS_random_Synergy_Bliss_e100_20260215_125234/omics_encoder.pt
+2026-02-15 14:32:20 | INFO | OmicsFusionModel weights also saved to /home/debnathk/drug-synergy/data/models/omics_fusion_model_best.pt
+2026-02-15 14:32:20 | INFO | Generating loss plot...
+2026-02-15 14:32:21 | INFO | Loss plot saved to /home/debnathk/drug-synergy/logs/mlp_std_CLS_random_Synergy_Bliss_e100_20260215_125234/loss_plot_std.png
+2026-02-15 14:32:21 | INFO | Loss plot also saved to /home/debnathk/drug-synergy/assets/loss_plot_std.png
+2026-02-15 14:32:21 | INFO | ================================================================================
+2026-02-15 14:32:21 | INFO | All outputs saved to: /home/debnathk/drug-synergy/logs/mlp_std_CLS_random_Synergy_Bliss_e100_20260215_125234
+2026-02-15 14:32:21 | INFO | ================================================================================

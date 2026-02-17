@@ -1,0 +1,35 @@
+{
+  "split": "test",
+  "split_type": "random",
+  "target": "Synergy_ZIP",
+  "num_samples": 59420,
+  "timestamp": "2026-02-14T20:05:51.679717",
+  "attention_model": {
+    "metrics": {
+      "MSE": 13.931427955627441,
+      "RMSE": 3.7324828138422075,
+      "MAE": 2.73471736907959,
+      "R2": 0.5159612894058228,
+      "Pearson_r": 0.7212428433957908,
+      "Pearson_pval": 0.0,
+      "Spearman_r": 0.6678607514840296,
+      "Spearman_pval": 0.0
+    },
+    "metrics_with_std": {
+      "RMSE": [
+        3.7328456365038365,
+        0.016771936469417596
+      ],
+      "SCC": [
+        0.6677661873250355,
+        0.0025863954623421464
+      ],
+      "PCC": [
+        0.7209441495299407,
+        0.003203894903836245
+      ]
+    },
+    "checkpoint": "/home/debnathk/drug-synergy/logs/kan_std_CLS_random_Synergy_ZIP_e100_20260214_180208/checkpoint_best.pt",
+    "standardized": true
+  }
+}

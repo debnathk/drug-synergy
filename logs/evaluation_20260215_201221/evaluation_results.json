@@ -1,0 +1,35 @@
+{
+  "split": "test",
+  "split_type": "cold_drug",
+  "target": "Synergy_Loewe",
+  "num_samples": 61723,
+  "timestamp": "2026-02-15T20:12:21.371323",
+  "attention_model": {
+    "metrics": {
+      "MSE": 194.34226989746094,
+      "RMSE": 13.94066963590562,
+      "MAE": 9.60198974609375,
+      "R2": 0.05244356393814087,
+      "Pearson_r": 0.2949893694225579,
+      "Pearson_pval": 0.0,
+      "Spearman_r": 0.24754531054088183,
+      "Spearman_pval": 0.0
+    },
+    "metrics_with_std": {
+      "RMSE": [
+        13.933010334158759,
+        0.07952384176347042
+      ],
+      "SCC": [
+        0.24732612374106178,
+        0.004017783482709124
+      ],
+      "PCC": [
+        0.2947741760024622,
+        0.004911415837018859
+      ]
+    },
+    "checkpoint": "/home/debnathk/drug-synergy/logs/kan_std_CLS_cold_drug_Synergy_Loewe_e100_20260215_181554/checkpoint_best.pt",
+    "standardized": true
+  }
+}

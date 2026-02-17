@@ -1,0 +1,118 @@
+2026-02-15 00:13:52 | INFO | Run directory: /home/debnathk/drug-synergy/logs/mlp_std_random_Synergy_HSA_e100_20260215_001352
+2026-02-15 00:13:52 | INFO | Log file: /home/debnathk/drug-synergy/logs/mlp_std_random_Synergy_HSA_e100_20260215_001352/training.log
+2026-02-15 00:13:52 | INFO | Script copied to /home/debnathk/drug-synergy/logs/mlp_std_random_Synergy_HSA_e100_20260215_001352/main.py
+2026-02-15 00:13:52 | INFO | ================================================================================
+2026-02-15 00:13:52 | INFO | Starting Drug Synergy Prediction Training (MLP Head)
+2026-02-15 00:13:52 | INFO | ================================================================================
+2026-02-15 00:13:52 | INFO | Split type: random, raw path: /home/debnathk/drug-synergy/data/raw/random, drug embeddings: /home/debnathk/drug-synergy/data/embeddings/drug_embeddings_random.pt
+2026-02-15 00:13:52 | INFO | Loading datasets...
+2026-02-15 00:13:52 | INFO | Applying target standardization...
+2026-02-15 00:13:52 | INFO | Target scaler fitted - Mean: -0.4388, Std: 5.9223
+2026-02-15 00:13:52 | INFO | Original target range: [-80.86, 64.29]
+2026-02-15 00:13:52 | INFO | Standardized target range: [-13.58, 10.93]
+2026-02-15 00:13:52 | INFO | Datasets loaded successfully
+2026-02-15 00:13:52 | INFO | Configuration saved to /home/debnathk/drug-synergy/logs/mlp_std_random_Synergy_HSA_e100_20260215_001352/config.json
+2026-02-15 00:13:52 | INFO | Device: cuda
+2026-02-15 00:13:52 | INFO | Training samples: 207968
+2026-02-15 00:13:52 | INFO | Validation samples: 29710
+2026-02-15 00:13:52 | INFO | Target column: Synergy_HSA
+2026-02-15 00:13:52 | INFO | Target standardization: True
+2026-02-15 00:13:52 | INFO | Batch size: 64
+2026-02-15 00:13:52 | INFO | Learning rate: 0.0001
+2026-02-15 00:13:52 | INFO | Number of epochs: 100
+2026-02-15 00:13:52 | INFO | Omics dimensions - mRNA: 23808, miRNA: 627, Proteomics: 3171
+2026-02-15 00:13:52 | INFO | Running sanity check...
+2026-02-15 00:13:52 | INFO | Drug1 embedding shape: torch.Size([768])
+2026-02-15 00:13:52 | INFO | Drug2 embedding shape: torch.Size([768])
+2026-02-15 00:13:52 | INFO | mRNA shape: torch.Size([23808])
+2026-02-15 00:13:52 | INFO | miRNA shape: torch.Size([627])
+2026-02-15 00:13:52 | INFO | Proteomics shape: torch.Size([3171])
+2026-02-15 00:13:52 | INFO | Target shape: torch.Size([1])
+2026-02-15 00:13:52 | INFO | Target sample: -0.3848823010921478
+2026-02-15 00:13:52 | INFO | Train batches: 3250
+2026-02-15 00:13:52 | INFO | Validation batches: 465
+2026-02-15 00:13:52 | INFO | Initializing SynergyModel with MLP head...
+2026-02-15 00:13:53 | INFO | Total parameters: 17,671,853
+2026-02-15 00:13:53 | INFO | Trainable parameters: 17,671,853
+2026-02-15 00:13:53 | INFO | ================================================================================
+2026-02-15 00:13:53 | INFO | Starting Training
+2026-02-15 00:13:53 | INFO | ================================================================================
+2026-02-15 00:14:54 | INFO | Best model saved at epoch 1 with val_loss: 0.7273
+2026-02-15 00:15:54 | INFO | Best model saved at epoch 2 with val_loss: 0.6532
+2026-02-15 00:16:55 | INFO | Best model saved at epoch 3 with val_loss: 0.6123
+2026-02-15 00:17:55 | INFO | Best model saved at epoch 4 with val_loss: 0.5967
+2026-02-15 00:18:56 | INFO | Best model saved at epoch 5 with val_loss: 0.5640
+2026-02-15 00:19:57 | INFO | Best model saved at epoch 6 with val_loss: 0.5504
+2026-02-15 00:20:57 | INFO | Best model saved at epoch 7 with val_loss: 0.5439
+2026-02-15 00:21:58 | INFO | Best model saved at epoch 8 with val_loss: 0.5266
+2026-02-15 00:22:59 | INFO | Best model saved at epoch 9 with val_loss: 0.5146
+2026-02-15 00:23:59 | INFO | Best model saved at epoch 10 with val_loss: 0.5023
+2026-02-15 00:23:59 | INFO | Epoch 010/100 | Train: 0.4772 | Val: 0.5023 | Best Val: 0.5023 | RMSE: 4.1974 | SCC: 0.6189 | PCC: 0.7086
+2026-02-15 00:25:00 | INFO | Best model saved at epoch 11 with val_loss: 0.4999
+2026-02-15 00:26:00 | INFO | Best model saved at epoch 12 with val_loss: 0.4908
+2026-02-15 00:27:01 | INFO | Best model saved at epoch 13 with val_loss: 0.4794
+2026-02-15 00:28:02 | INFO | Best model saved at epoch 14 with val_loss: 0.4683
+2026-02-15 00:29:02 | INFO | Best model saved at epoch 15 with val_loss: 0.4630
+2026-02-15 00:30:03 | INFO | Best model saved at epoch 16 with val_loss: 0.4601
+2026-02-15 00:31:04 | INFO | Best model saved at epoch 17 with val_loss: 0.4558
+2026-02-15 00:32:04 | INFO | Best model saved at epoch 18 with val_loss: 0.4528
+2026-02-15 00:33:05 | INFO | Best model saved at epoch 19 with val_loss: 0.4477
+2026-02-15 00:34:05 | INFO | Best model saved at epoch 20 with val_loss: 0.4425
+2026-02-15 00:34:05 | INFO | Epoch 020/100 | Train: 0.3700 | Val: 0.4425 | Best Val: 0.4425 | RMSE: 3.9373 | SCC: 0.6576 | PCC: 0.7497
+2026-02-15 00:35:06 | INFO | Best model saved at epoch 21 with val_loss: 0.4395
+2026-02-15 00:36:08 | INFO | Best model saved at epoch 22 with val_loss: 0.4355
+2026-02-15 00:37:08 | INFO | Best model saved at epoch 23 with val_loss: 0.4293
+2026-02-15 00:39:09 | INFO | Best model saved at epoch 25 with val_loss: 0.4288
+2026-02-15 00:41:10 | INFO | Best model saved at epoch 27 with val_loss: 0.4175
+2026-02-15 00:43:10 | INFO | Best model saved at epoch 29 with val_loss: 0.4166
+2026-02-15 00:44:11 | INFO | Best model saved at epoch 30 with val_loss: 0.4115
+2026-02-15 00:44:11 | INFO | Epoch 030/100 | Train: 0.3112 | Val: 0.4115 | Best Val: 0.4115 | RMSE: 3.7985 | SCC: 0.6774 | PCC: 0.7699
+2026-02-15 00:45:12 | INFO | Best model saved at epoch 31 with val_loss: 0.4089
+2026-02-15 00:47:12 | INFO | Best model saved at epoch 33 with val_loss: 0.4046
+2026-02-15 00:48:13 | INFO | Best model saved at epoch 34 with val_loss: 0.4015
+2026-02-15 00:52:14 | INFO | Best model saved at epoch 38 with val_loss: 0.4008
+2026-02-15 00:54:14 | INFO | Epoch 040/100 | Train: 0.2734 | Val: 0.4020 | Best Val: 0.4008 | RMSE: 3.7555 | SCC: 0.6850 | PCC: 0.7767
+2026-02-15 00:55:15 | INFO | Best model saved at epoch 41 with val_loss: 0.3981
+2026-02-15 00:56:16 | INFO | Best model saved at epoch 42 with val_loss: 0.3964
+2026-02-15 00:57:17 | INFO | Best model saved at epoch 43 with val_loss: 0.3922
+2026-02-15 00:58:18 | INFO | Best model saved at epoch 44 with val_loss: 0.3916
+2026-02-15 01:04:18 | INFO | Epoch 050/100 | Train: 0.2462 | Val: 0.3925 | Best Val: 0.3916 | RMSE: 3.7095 | SCC: 0.6907 | PCC: 0.7824
+2026-02-15 01:06:20 | INFO | Best model saved at epoch 52 with val_loss: 0.3878
+2026-02-15 01:10:21 | INFO | Best model saved at epoch 56 with val_loss: 0.3863
+2026-02-15 01:14:22 | INFO | Best model saved at epoch 60 with val_loss: 0.3858
+2026-02-15 01:14:22 | INFO | Epoch 060/100 | Train: 0.2283 | Val: 0.3858 | Best Val: 0.3858 | RMSE: 3.6765 | SCC: 0.6949 | PCC: 0.7868
+2026-02-15 01:21:23 | INFO | Best model saved at epoch 67 with val_loss: 0.3856
+2026-02-15 01:23:23 | INFO | Best model saved at epoch 69 with val_loss: 0.3830
+2026-02-15 01:24:24 | INFO | Epoch 070/100 | Train: 0.2129 | Val: 0.3876 | Best Val: 0.3830 | RMSE: 3.6851 | SCC: 0.6965 | PCC: 0.7853
+2026-02-15 01:34:18 | INFO | Best model saved at epoch 80 with val_loss: 0.3789
+2026-02-15 01:34:18 | INFO | Epoch 080/100 | Train: 0.2011 | Val: 0.3789 | Best Val: 0.3789 | RMSE: 3.6443 | SCC: 0.6984 | PCC: 0.7904
+2026-02-15 01:44:12 | INFO | Epoch 090/100 | Train: 0.1927 | Val: 0.3796 | Best Val: 0.3789 | RMSE: 3.6480 | SCC: 0.6983 | PCC: 0.7906
+2026-02-15 01:51:08 | INFO | Best model saved at epoch 97 with val_loss: 0.3787
+2026-02-15 01:54:07 | INFO | Epoch 100/100 | Train: 0.1863 | Val: 0.3802 | Best Val: 0.3787 | RMSE: 3.6527 | SCC: 0.6998 | PCC: 0.7916
+2026-02-15 01:54:07 | INFO | ================================================================================
+2026-02-15 01:54:07 | INFO | Training Complete
+2026-02-15 01:54:07 | INFO | ================================================================================
+2026-02-15 01:54:07 | INFO | Final train loss: 0.1863
+2026-02-15 01:54:07 | INFO | Final validation loss: 0.3802
+2026-02-15 01:54:07 | INFO | Best validation loss: 0.3787
+2026-02-15 01:54:07 | INFO | Best validation loss (original scale): 13.2808
+2026-02-15 01:54:07 | INFO | 
+Best validation metrics (RMSE, SCC, PCC)
++--------+-------------+
+| Metric |    Value    |
++--------+-------------+
+|  RMSE  | 3.64 (0.03) |
+|  SCC   | 0.70 (0.00) |
+|  PCC   | 0.79 (0.00) |
++--------+-------------+
+
+2026-02-15 01:54:07 | INFO | Metrics saved to /home/debnathk/drug-synergy/logs/mlp_std_random_Synergy_HSA_e100_20260215_001352/metrics.json
+2026-02-15 01:54:07 | INFO | Saving trained OmicsFusionModel weights...
+2026-02-15 01:54:07 | INFO | OmicsFusionModel weights saved to /home/debnathk/drug-synergy/logs/mlp_std_random_Synergy_HSA_e100_20260215_001352/omics_encoder.pt
+2026-02-15 01:54:07 | INFO | OmicsFusionModel weights also saved to /home/debnathk/drug-synergy/data/models/omics_fusion_model_best.pt
+2026-02-15 01:54:07 | INFO | Generating loss plot...
+2026-02-15 01:54:07 | INFO | Loss plot saved to /home/debnathk/drug-synergy/logs/mlp_std_random_Synergy_HSA_e100_20260215_001352/loss_plot_std.png
+2026-02-15 01:54:08 | INFO | Loss plot also saved to /home/debnathk/drug-synergy/assets/loss_plot_std.png
+2026-02-15 01:54:08 | INFO | ================================================================================
+2026-02-15 01:54:08 | INFO | All outputs saved to: /home/debnathk/drug-synergy/logs/mlp_std_random_Synergy_HSA_e100_20260215_001352
+2026-02-15 01:54:08 | INFO | ================================================================================

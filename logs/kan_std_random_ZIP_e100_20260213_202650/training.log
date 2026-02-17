@@ -1,0 +1,101 @@
+2026-02-13 20:26:50 | INFO | Run directory: /home/debnathk/drug-synergy/logs/kan_std_random_ZIP_e100_20260213_202650
+2026-02-13 20:26:50 | INFO | Log file: /home/debnathk/drug-synergy/logs/kan_std_random_ZIP_e100_20260213_202650/training.log
+2026-02-13 20:26:50 | INFO | Script copied to /home/debnathk/drug-synergy/logs/kan_std_random_ZIP_e100_20260213_202650/main.py
+2026-02-13 20:26:50 | INFO | ================================================================================
+2026-02-13 20:26:50 | INFO | Starting Drug Synergy Prediction Training (KAN Head)
+2026-02-13 20:26:50 | INFO | ================================================================================
+2026-02-13 20:26:50 | INFO | Split type: random, raw path: /home/debnathk/drug-synergy/data/raw/random, drug embeddings: /home/debnathk/drug-synergy/data/embeddings/drug_embeddings_random.pt
+2026-02-13 20:26:50 | INFO | Loading datasets...
+2026-02-13 20:26:50 | INFO | Applying target standardization...
+2026-02-13 20:26:50 | INFO | Target scaler fitted - Mean: -0.8427, Std: 5.3524
+2026-02-13 20:26:50 | INFO | Original target range: [-36.01, 66.66]
+2026-02-13 20:26:50 | INFO | Standardized target range: [-6.57, 12.61]
+2026-02-13 20:26:50 | INFO | Datasets loaded successfully
+2026-02-13 20:26:50 | INFO | Configuration saved to /home/debnathk/drug-synergy/logs/kan_std_random_ZIP_e100_20260213_202650/config.json
+2026-02-13 20:26:50 | INFO | Device: cuda
+2026-02-13 20:26:50 | INFO | Training samples: 207968
+2026-02-13 20:26:50 | INFO | Validation samples: 29710
+2026-02-13 20:26:50 | INFO | Target column: Synergy_ZIP
+2026-02-13 20:26:50 | INFO | Target standardization: True
+2026-02-13 20:26:50 | INFO | Batch size: 64
+2026-02-13 20:26:50 | INFO | Learning rate: 0.0001
+2026-02-13 20:26:50 | INFO | Number of epochs: 100
+2026-02-13 20:26:50 | INFO | Omics dimensions - mRNA: 23808, miRNA: 627, Proteomics: 3171
+2026-02-13 20:26:50 | INFO | Running sanity check...
+2026-02-13 20:26:50 | INFO | Drug1 embedding shape: torch.Size([768])
+2026-02-13 20:26:50 | INFO | Drug2 embedding shape: torch.Size([768])
+2026-02-13 20:26:50 | INFO | mRNA shape: torch.Size([23808])
+2026-02-13 20:26:50 | INFO | miRNA shape: torch.Size([627])
+2026-02-13 20:26:50 | INFO | Proteomics shape: torch.Size([3171])
+2026-02-13 20:26:50 | INFO | Target shape: torch.Size([1])
+2026-02-13 20:26:50 | INFO | Target sample: -0.1987028419971466
+2026-02-13 20:26:50 | INFO | Train batches: 3250
+2026-02-13 20:26:50 | INFO | Validation batches: 465
+2026-02-13 20:26:50 | INFO | Initializing SynergyModel with KAN head...
+2026-02-13 20:26:51 | INFO | Total parameters: 18,039,020
+2026-02-13 20:26:51 | INFO | Trainable parameters: 18,039,020
+2026-02-13 20:26:51 | INFO | ================================================================================
+2026-02-13 20:26:51 | INFO | Starting Training
+2026-02-13 20:26:51 | INFO | ================================================================================
+2026-02-13 20:28:03 | INFO | Best model saved at epoch 1 with val_loss: 0.7456
+2026-02-13 20:29:14 | INFO | Best model saved at epoch 2 with val_loss: 0.6909
+2026-02-13 20:30:26 | INFO | Best model saved at epoch 3 with val_loss: 0.6384
+2026-02-13 20:31:38 | INFO | Best model saved at epoch 4 with val_loss: 0.6090
+2026-02-13 20:32:50 | INFO | Best model saved at epoch 5 with val_loss: 0.5976
+2026-02-13 20:34:01 | INFO | Best model saved at epoch 6 with val_loss: 0.5892
+2026-02-13 20:35:13 | INFO | Best model saved at epoch 7 with val_loss: 0.5714
+2026-02-13 20:36:26 | INFO | Best model saved at epoch 8 with val_loss: 0.5546
+2026-02-13 20:37:38 | INFO | Best model saved at epoch 9 with val_loss: 0.5494
+2026-02-13 20:38:49 | INFO | Best model saved at epoch 10 with val_loss: 0.5376
+2026-02-13 20:38:49 | INFO | Epoch 010/100 | Train: 0.4931 | Val: 0.5376 | Best Val: 0.5376 | RMSE: 3.9253 | SCC: 0.6321 | PCC: 0.6834
+2026-02-13 20:40:01 | INFO | Best model saved at epoch 11 with val_loss: 0.5313
+2026-02-13 20:42:24 | INFO | Best model saved at epoch 13 with val_loss: 0.5225
+2026-02-13 20:44:47 | INFO | Best model saved at epoch 15 with val_loss: 0.5183
+2026-02-13 20:45:58 | INFO | Best model saved at epoch 16 with val_loss: 0.5135
+2026-02-13 20:47:10 | INFO | Best model saved at epoch 17 with val_loss: 0.5061
+2026-02-13 20:48:22 | INFO | Best model saved at epoch 18 with val_loss: 0.5033
+2026-02-13 20:49:34 | INFO | Best model saved at epoch 19 with val_loss: 0.4984
+2026-02-13 20:50:45 | INFO | Epoch 020/100 | Train: 0.4019 | Val: 0.5021 | Best Val: 0.4984 | RMSE: 3.7905 | SCC: 0.6520 | PCC: 0.7116
+2026-02-13 20:51:57 | INFO | Best model saved at epoch 21 with val_loss: 0.4957
+2026-02-13 20:56:39 | INFO | Best model saved at epoch 25 with val_loss: 0.4923
+2026-02-13 21:00:12 | INFO | Best model saved at epoch 28 with val_loss: 0.4897
+2026-02-13 21:02:33 | INFO | Best model saved at epoch 30 with val_loss: 0.4867
+2026-02-13 21:02:33 | INFO | Epoch 030/100 | Train: 0.3553 | Val: 0.4867 | Best Val: 0.4867 | RMSE: 3.7341 | SCC: 0.6641 | PCC: 0.7206
+2026-02-13 21:04:55 | INFO | Best model saved at epoch 32 with val_loss: 0.4852
+2026-02-13 21:12:00 | INFO | Best model saved at epoch 38 with val_loss: 0.4844
+2026-02-13 21:14:22 | INFO | Epoch 040/100 | Train: 0.3235 | Val: 0.4856 | Best Val: 0.4844 | RMSE: 3.7301 | SCC: 0.6645 | PCC: 0.7236
+2026-02-13 21:26:08 | INFO | Best model saved at epoch 50 with val_loss: 0.4837
+2026-02-13 21:26:08 | INFO | Epoch 050/100 | Train: 0.2991 | Val: 0.4837 | Best Val: 0.4837 | RMSE: 3.7200 | SCC: 0.6700 | PCC: 0.7257
+2026-02-13 21:27:19 | INFO | Best model saved at epoch 51 with val_loss: 0.4825
+2026-02-13 21:37:57 | INFO | Epoch 060/100 | Train: 0.2809 | Val: 0.4937 | Best Val: 0.4825 | RMSE: 3.7602 | SCC: 0.6607 | PCC: 0.7185
+2026-02-13 21:49:42 | INFO | Epoch 070/100 | Train: 0.2662 | Val: 0.4986 | Best Val: 0.4825 | RMSE: 3.7796 | SCC: 0.6627 | PCC: 0.7206
+2026-02-13 22:01:28 | INFO | Epoch 080/100 | Train: 0.2542 | Val: 0.5104 | Best Val: 0.4825 | RMSE: 3.8226 | SCC: 0.6558 | PCC: 0.7156
+2026-02-13 22:13:19 | INFO | Epoch 090/100 | Train: 0.2434 | Val: 0.5068 | Best Val: 0.4825 | RMSE: 3.8114 | SCC: 0.6559 | PCC: 0.7160
+2026-02-13 22:25:10 | INFO | Epoch 100/100 | Train: 0.2354 | Val: 0.5114 | Best Val: 0.4825 | RMSE: 3.8278 | SCC: 0.6584 | PCC: 0.7163
+2026-02-13 22:25:10 | INFO | ================================================================================
+2026-02-13 22:25:10 | INFO | Training Complete
+2026-02-13 22:25:10 | INFO | ================================================================================
+2026-02-13 22:25:10 | INFO | Final train loss: 0.2354
+2026-02-13 22:25:10 | INFO | Final validation loss: 0.5114
+2026-02-13 22:25:10 | INFO | Best validation loss: 0.4825
+2026-02-13 22:25:10 | INFO | Best validation loss (original scale): 13.8241
+2026-02-13 22:25:10 | INFO | 
+Best validation metrics (RMSE, SCC, PCC)
++--------+-------------+
+| Metric |    Value    |
++--------+-------------+
+|  RMSE  | 3.72 (0.02) |
+|  SCC   | 0.67 (0.00) |
+|  PCC   | 0.73 (0.00) |
++--------+-------------+
+
+2026-02-13 22:25:10 | INFO | Metrics saved to /home/debnathk/drug-synergy/logs/kan_std_random_ZIP_e100_20260213_202650/metrics.json
+2026-02-13 22:25:10 | INFO | Saving trained OmicsFusionModel weights...
+2026-02-13 22:25:10 | INFO | OmicsFusionModel weights saved to /home/debnathk/drug-synergy/logs/kan_std_random_ZIP_e100_20260213_202650/omics_encoder.pt
+2026-02-13 22:25:10 | INFO | OmicsFusionModel weights also saved to /home/debnathk/drug-synergy/data/models/omics_fusion_model_best.pt
+2026-02-13 22:25:10 | INFO | Generating loss plot...
+2026-02-13 22:25:10 | INFO | Loss plot saved to /home/debnathk/drug-synergy/logs/kan_std_random_ZIP_e100_20260213_202650/loss_plot_std.png
+2026-02-13 22:25:11 | INFO | Loss plot also saved to /home/debnathk/drug-synergy/assets/loss_plot_std.png
+2026-02-13 22:25:11 | INFO | ================================================================================
+2026-02-13 22:25:11 | INFO | All outputs saved to: /home/debnathk/drug-synergy/logs/kan_std_random_ZIP_e100_20260213_202650
+2026-02-13 22:25:11 | INFO | ================================================================================

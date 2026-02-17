@@ -38,50 +38,65 @@ class OmicsAttentionFusion(nn.Module):
             batch_first=True
         )
 
+        # Learnable CLS token: shape [1, 1, emb_dim]
+        self.cls_token = nn.Parameter(torch.zeros(1, 1, emb_dim))
+        nn.init.trunc_normal_(self.cls_token, std=0.02) # ViT-style init
+
     def forward(self, embeddings, return_attention=False):
         """
         Args:
             embeddings: Tensor of shape [batch, num_modalities, emb_dim]
             return_attention: If True, also return attention weights
         Returns:
-            Fused embedding of shape [batch, emb_dim]
-            If return_attention: also returns attention weights [batch, num_heads, num_modalities, num_modalities]
+            Fused CLS embedding of shape [batch, emb_dim]
+            If return_attention: also returns attention weights [batch, num_heads, num_modalities+1, num_modalities+1]
         """
-        attn_out, attn_weights = self.attn(embeddings, embeddings, embeddings, average_attn_weights=False)
-        fused = attn_out.mean(dim=1)  # [batch, emb_dim]
+        B = embeddings.size(0)
+
+        # Expand CLS toekn across the batch: [B, 1, emb_dim]
+        cls_tokens = self.cls_token.expand(B, -1, -1)
+
+        # Prepend CLS token -> [B, num_modalities + 1, emb_dim]
+        x = torch.cat([cls_tokens, embeddings], dim=1)
+
+
+        attn_out, attn_weights = self.attn(x, x, x, average_attn_weights=False)
+
+        # Extract only CLS token output -> [B, emb_dim]
+        fused = attn_out[:, 0, :]
         
         if return_attention:
             return fused, attn_weights
         return fused
 
 
-class ProjectionAttention(nn.Module):
-    """Projects embedding to higher dimension using attention mechanism."""
-    def __init__(self, in_dim=256, out_dim=768):
-        super().__init__()
-        self.query = nn.Parameter(torch.randn(1, 1, out_dim))
-        self.key = nn.Linear(in_dim, out_dim)
-        self.value = nn.Linear(in_dim, out_dim)
-        self.attn = nn.MultiheadAttention(
-            embed_dim=out_dim,
-            num_heads=8,
-            batch_first=True
-        )
+# class ProjectionAttention(nn.Module): # **Attention is overkill here
+#     """Projects embedding to higher dimension using attention mechanism."""
+#     def __init__(self, in_dim=256, out_dim=768):
+#         super().__init__()
+#         self.query = nn.Parameter(torch.randn(1, 1, out_dim))
+#         self.key = nn.Linear(in_dim, out_dim)
+#         self.value = nn.Linear(in_dim, out_dim)
+#         self.attn = nn.MultiheadAttention(
+#             embed_dim=out_dim,
+#             num_heads=8,
+#             batch_first=True
+#         )
 
-    def forward(self, x):
-        """
-        Args:
-            x: Tensor of shape [batch, in_dim]
-        Returns:
-            Projected embedding of shape [batch, out_dim]
-        """
-        batch_size = x.size(0)
-        k = self.key(x).unsqueeze(1)    # [batch, 1, out_dim]
-        v = self.value(x).unsqueeze(1)  # [batch, 1, out_dim]
-        q = self.query.expand(batch_size, -1, -1)  # [batch, 1, out_dim]
+#     def forward(self, x):
+#         """
+#         Args:
+#             x: Tensor of shape [batch, in_dim]
+#         Returns:
+#             Projected embedding of shape [batch, out_dim]
+#         """
+#         batch_size = x.size(0)
+#         k = self.key(x).unsqueeze(1)    # [batch, 1, out_dim]
+#         v = self.value(x).unsqueeze(1)  # [batch, 1, out_dim]
+#         q = self.query.expand(batch_size, -1, -1)  # [batch, 1, out_dim]
 
-        out, _ = self.attn(q, k, v)
-        return out.squeeze(1)  # [batch, out_dim]
+#         out, _ = self.attn(q, k, v)
+#         return out.squeeze(1)  # [batch, out_dim]
 
 
 class OmicsFusionModel(nn.Module):
@@ -96,7 +111,8 @@ class OmicsFusionModel(nn.Module):
         self.prot_encoder = OmicsEncoder(prot_dim)
 
         self.fusion = OmicsAttentionFusion(emb_dim=256)
-        self.project = ProjectionAttention(256, out_dim)
+        # self.project = ProjectionAttention(256, out_dim)
+        self.project = nn.Linear(256, out_dim)
 
     def forward(self, mrna, mirna, prot, return_attention=False):
         """

@@ -1,0 +1,186 @@
+Job started on Mon Feb 16 02:09:30 PM EST 2026
+Device: NVIDIA A100-PCIE-40GB
+====== TRAIN: mlp_std_CLS_cold_drug_Synergy_ZIP_e100 ======
+
+Best validation metrics (RMSE, SCC, PCC)
++--------+-------------+
+| Metric |    Value    |
++--------+-------------+
+|  RMSE  | 4.66 (0.03) |
+|  SCC   | 0.33 (0.01) |
+|  PCC   | 0.33 (0.01) |
++--------+-------------+
+
+====== EVAL: mlp_std_CLS_cold_drug_Synergy_ZIP_e100 ======
+Device: cuda
+Split type: cold_drug, evaluation split: test, target: Synergy_ZIP
+Output directory: /home/debnathk/drug-synergy/logs/evaluation_20260216_154423
+
+Loading data...
+Loaded 61723 samples from test split (raw path: /home/debnathk/drug-synergy/data/raw/cold_drug)
+
+============================================================
+ Evaluating SynergyModel (Attention-based)
+============================================================
+Omics dimensions - mRNA: 23808, miRNA: 627, Proteomics: 3171
+Auto-detected checkpoint: /home/debnathk/drug-synergy/logs/mlp_std_CLS_cold_drug_Synergy_ZIP_e100_20260216_140936/checkpoint_best.pt
+Loaded SynergyModel from /home/debnathk/drug-synergy/logs/mlp_std_CLS_cold_drug_Synergy_ZIP_e100_20260216_140936/checkpoint_best.pt
+  - Checkpoint epoch: 9
+  - Checkpoint val_loss: 0.7449
+  - Head type: mlp
+  - Target standardization: Yes (mean=-0.7900, std=5.4054)
+
+Inverse transforming predictions from standardized space...
+
+============================================================
+ SynergyModel (Attention) - Evaluation Metrics
+============================================================
+Metric               Value               
+----------------------------------------
+MSE                  23.9664             
+RMSE                 4.8956              
+MAE                  3.5895              
+R²                   0.1834              
+Pearson r            0.4300              
+Pearson p-value      0.00e+00            
+Spearman ρ           0.3939              
+Spearman p-value     0.00e+00            
+============================================================
+
+
+SynergyModel (Attention) - RMSE, SCC, PCC
++--------+-------------+
+| Metric |    Value    |
++--------+-------------+
+|  RMSE  | 4.90 (0.02) |
+|  SCC   | 0.39 (0.00) |
+|  PCC   | 0.43 (0.00) |
++--------+-------------+
+
+Results saved to /home/debnathk/drug-synergy/logs/evaluation_20260216_154423/evaluation_results.json
+
+Evaluation complete! Results saved to /home/debnathk/drug-synergy/logs/evaluation_20260216_154423
+
+====== TRAIN: mlp_std_CLS_cold_drug_Synergy_HSA_e100 ======
+
+Best validation metrics (RMSE, SCC, PCC)
++--------+-------------+
+| Metric |    Value    |
++--------+-------------+
+|  RMSE  | 5.57 (0.06) |
+|  SCC   | 0.29 (0.01) |
+|  PCC   | 0.27 (0.01) |
++--------+-------------+
+
+====== EVAL: mlp_std_CLS_cold_drug_Synergy_HSA_e100 ======
+Device: cuda
+Split type: cold_drug, evaluation split: test, target: Synergy_HSA
+Output directory: /home/debnathk/drug-synergy/logs/evaluation_20260216_172159
+
+Loading data...
+Loaded 61723 samples from test split (raw path: /home/debnathk/drug-synergy/data/raw/cold_drug)
+
+============================================================
+ Evaluating SynergyModel (Attention-based)
+============================================================
+Omics dimensions - mRNA: 23808, miRNA: 627, Proteomics: 3171
+Auto-detected checkpoint: /home/debnathk/drug-synergy/logs/mlp_std_CLS_cold_drug_Synergy_HSA_e100_20260216_154441/checkpoint_best.pt
+Loaded SynergyModel from /home/debnathk/drug-synergy/logs/mlp_std_CLS_cold_drug_Synergy_HSA_e100_20260216_154441/checkpoint_best.pt
+  - Checkpoint epoch: 23
+  - Checkpoint val_loss: 0.8963
+  - Head type: mlp
+  - Target standardization: Yes (mean=-0.3370, std=5.8735)
+
+Inverse transforming predictions from standardized space...
+
+============================================================
+ SynergyModel (Attention) - Evaluation Metrics
+============================================================
+Metric               Value               
+----------------------------------------
+MSE                  32.2079             
+RMSE                 5.6752              
+MAE                  3.9991              
+R²                   0.1668              
+Pearson r            0.4107              
+Pearson p-value      0.00e+00            
+Spearman ρ           0.3875              
+Spearman p-value     0.00e+00            
+============================================================
+
+
+SynergyModel (Attention) - RMSE, SCC, PCC
++--------+-------------+
+| Metric |    Value    |
++--------+-------------+
+|  RMSE  | 5.67 (0.04) |
+|  SCC   | 0.39 (0.00) |
+|  PCC   | 0.41 (0.00) |
++--------+-------------+
+
+Results saved to /home/debnathk/drug-synergy/logs/evaluation_20260216_172159/evaluation_results.json
+
+Evaluation complete! Results saved to /home/debnathk/drug-synergy/logs/evaluation_20260216_172159
+
+====== TRAIN: mlp_std_CLS_cold_drug_Synergy_Bliss_e100 ======
+
+Best validation metrics (RMSE, SCC, PCC)
++--------+-------------+
+| Metric |    Value    |
++--------+-------------+
+|  RMSE  | 5.73 (0.06) |
+|  SCC   | 0.22 (0.01) |
+|  PCC   | 0.22 (0.01) |
++--------+-------------+
+
+====== EVAL: mlp_std_CLS_cold_drug_Synergy_Bliss_e100 ======
+Device: cuda
+Split type: cold_drug, evaluation split: test, target: Synergy_Bliss
+Output directory: /home/debnathk/drug-synergy/logs/evaluation_20260216_185943
+
+Loading data...
+Loaded 61723 samples from test split (raw path: /home/debnathk/drug-synergy/data/raw/cold_drug)
+
+============================================================
+ Evaluating SynergyModel (Attention-based)
+============================================================
+Omics dimensions - mRNA: 23808, miRNA: 627, Proteomics: 3171
+Auto-detected checkpoint: /home/debnathk/drug-synergy/logs/mlp_std_CLS_cold_drug_Synergy_Bliss_e100_20260216_172217/checkpoint_best.pt
+Loaded SynergyModel from /home/debnathk/drug-synergy/logs/mlp_std_CLS_cold_drug_Synergy_Bliss_e100_20260216_172217/checkpoint_best.pt
+  - Checkpoint epoch: 1
+  - Checkpoint val_loss: 0.8823
+  - Head type: mlp
+  - Target standardization: Yes (mean=0.2305, std=6.0961)
+
+Inverse transforming predictions from standardized space...
+
+============================================================
+ SynergyModel (Attention) - Evaluation Metrics
+============================================================
+Metric               Value               
+----------------------------------------
+MSE                  36.5625             
+RMSE                 6.0467              
+MAE                  4.2805              
+R²                   0.0847              
+Pearson r            0.3061              
+Pearson p-value      0.00e+00            
+Spearman ρ           0.2678              
+Spearman p-value     0.00e+00            
+============================================================
+
+
+SynergyModel (Attention) - RMSE, SCC, PCC
++--------+-------------+
+| Metric |    Value    |
++--------+-------------+
+|  RMSE  | 6.05 (0.04) |
+|  SCC   | 0.27 (0.00) |
+|  PCC   | 0.31 (0.00) |
++--------+-------------+
+
+Results saved to /home/debnathk/drug-synergy/logs/evaluation_20260216_185943/evaluation_results.json
+
+Evaluation complete! Results saved to /home/debnathk/drug-synergy/logs/evaluation_20260216_185943
+
+Job ended on Mon Feb 16 06:59:58 PM EST 2026

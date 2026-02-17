@@ -1,0 +1,21 @@
+{
+  "num_epochs": 100,
+  "batch_size": 64,
+  "learning_rate": 0.0001,
+  "optimizer": "AdamW",
+  "criterion": "MSELoss",
+  "target_column": "Synergy_ZIP",
+  "standardize_targets": true,
+  "split_type": "cold_drug",
+  "device": "cuda",
+  "train_samples": 206494,
+  "val_samples": 28881,
+  "model": "SynergyModel (KAN Head)",
+  "head_type": "kan",
+  "grid_size": 5,
+  "mrna_dim": 23808,
+  "mirna_dim": 627,
+  "prot_dim": 3171,
+  "scaler_mean": -0.7900180087223694,
+  "scaler_std": 5.405395608517782
+}

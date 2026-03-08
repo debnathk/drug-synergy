@@ -1,7 +1,7 @@
 """
 Description: Get embedding for all the unique drugs in DrugComb dataset
-Outcome: Embeddings of unique drugs as .pt (per split_type: drug_embeddings_<split_type>.pt)
-Author: Kusal Debnath
+Outcome: Embeddings of unique drugs as .pt (drug_embeddings_<split_type>_<model>.pt)
+         Supports MolFormer (768-dim) and ChemBERTa (384-dim)
 """
 
 import torch
@@ -18,12 +18,25 @@ EMBEDDINGS_PATH = DATA_PATH / "embeddings"
 
 # Use src.models for in-repo; fallback to models for legacy
 try:
-    from src.models.language_model import MolFormerMLM
+    from src.models.language_model import MolFormerMLM, ChemBERTaMLM
 except ImportError:
-    from models.language_model import MolFormerMLM
+    from models.language_model import MolFormerMLM, ChemBERTaMLM
+
+# Model mapping with their output dimensions
+MODEL_CLASSES = {
+    'molformer': (MolFormerMLM, 'MolFormer-XL', 768),
+    'chemberta': (ChemBERTaMLM, 'ChemBERTa-77M-MLM', 384),
+}
 
 
-def main(split_type="random"):
+def main(split_type="random", model="molformer"):
+    # Select the model class based on the argument
+    if model not in MODEL_CLASSES:
+        raise ValueError(f"Unknown model: {model}. Choices: {list(MODEL_CLASSES.keys())}")
+    
+    ModelClass, model_name, expected_dim = MODEL_CLASSES[model]
+    print(f"Using {model_name} (embedding dim: {expected_dim})")
+    
     # Load train/val/test from pre-generated splits for this split_type
     raw_dir = RAW_DATA_PATH / split_type
     train_path = raw_dir / "train_split.pkl"
@@ -70,7 +83,7 @@ def main(split_type="random"):
 
     batch_size = 32
     drug_embeddings_dict = {}
-    language_model = MolFormerMLM()
+    language_model = ModelClass()
 
     for batch in tqdm(batched(unique_drugs, batch_size), desc="Embedding", total=len(unique_drugs) // batch_size + 1):
         emb = language_model.get_batch_embeddings(batch)
@@ -84,16 +97,20 @@ def main(split_type="random"):
         for smi, vec in zip(batch, emb):
             drug_embeddings_dict[smi] = vec # vec shape: (768,)
 
-    print(f"Drug embeddings type and shape: {type(vec)} ,{vec.shape}")
+    actual_dim = vec.shape[0]
+    print(f"Drug embeddings type and shape: {type(vec)}, {vec.shape}")
+    
+    if actual_dim != expected_dim:
+        print(f"Warning: Expected dim {expected_dim}, got {actual_dim}")
 
     # Save embeddings
     embeddings_info = {
         "embeddings": drug_embeddings_dict,
-        "model": "MolFormer-XL",
-        "dim": next(iter(drug_embeddings_dict.values())).shape[0]
+        "model": model_name,
+        "dim": actual_dim
     }
 
-    out_path = EMBEDDINGS_PATH / f"drug_embeddings_{split_type}.pt"
+    out_path = EMBEDDINGS_PATH / f"drug_embeddings_{split_type}_{model}.pt"
     EMBEDDINGS_PATH.mkdir(parents=True, exist_ok=True)
     torch.save(embeddings_info, str(out_path))
     print(f"Embeddings generated and saved to {out_path}")
@@ -108,5 +125,12 @@ if __name__ == "__main__":
         choices=["random", "cold_drug"],
         help="Split type (must match pre-generated splits in data/raw/<split_type>/)",
     )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default="molformer",
+        choices=["molformer", "chemberta"],
+        help="Drug embedding model: molformer (768-dim) or chemberta (384-dim)",
+    )
     args = parser.parse_args()
-    main(split_type=args.split_type)
+    main(split_type=args.split_type, model=args.model)

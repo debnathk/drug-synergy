@@ -2,7 +2,6 @@
 Description: End-to-end synergy prediction model with trainable omics encoder
              and attention-based fusion of drug and omics embeddings.
              Supports both MLP and KAN prediction heads.
-Author: Kusal Debnath
 """
 
 import torch
@@ -14,14 +13,14 @@ from .kan import SynergyKAN
 
 class OmicsEncoder(nn.Module):
     """Encoder for a single omics modality (mRNA, miRNA, or proteomics)."""
-    def __init__(self, in_dim, out_dim=256):
+    def __init__(self, in_dim, out_dim=768): # Initially tried with 256
         super().__init__()
         self.net = nn.Sequential(
             nn.BatchNorm1d(in_dim),      # Normalize input features
-            nn.Linear(in_dim, 512),
-            nn.BatchNorm1d(512),
+            nn.Linear(in_dim, 1024),
+            nn.BatchNorm1d(1024),
             nn.ReLU(),
-            nn.Linear(512, out_dim)
+            nn.Linear(1024, out_dim)
         )
 
     def forward(self, x):
@@ -30,7 +29,7 @@ class OmicsEncoder(nn.Module):
 
 class OmicsAttentionFusion(nn.Module):
     """Fuses multiple omics modality embeddings using self-attention."""
-    def __init__(self, emb_dim=256):
+    def __init__(self, emb_dim=768):
         super().__init__()
         self.attn = nn.MultiheadAttention(
             embed_dim=emb_dim,
@@ -101,18 +100,24 @@ class OmicsAttentionFusion(nn.Module):
 
 class OmicsFusionModel(nn.Module):
     """
-    Fuses mRNA, miRNA, and proteomics data into a single 768-dim embedding.
+    Fuses mRNA, miRNA, and proteomics data into a single embedding.
     This is the trainable omics encoder.
+    
+    Args:
+        mrna_dim: Input dimension for mRNA features
+        mirna_dim: Input dimension for miRNA features
+        prot_dim: Input dimension for proteomics features
+        out_dim: Output embedding dimension (must match drug embedding dim)
     """
     def __init__(self, mrna_dim, mirna_dim, prot_dim, out_dim=768):
         super().__init__()
-        self.mrna_encoder = OmicsEncoder(mrna_dim)
-        self.mirna_encoder = OmicsEncoder(mirna_dim)
-        self.prot_encoder = OmicsEncoder(prot_dim)
+        self.mrna_encoder = OmicsEncoder(mrna_dim, out_dim=out_dim)
+        self.mirna_encoder = OmicsEncoder(mirna_dim, out_dim=out_dim)
+        self.prot_encoder = OmicsEncoder(prot_dim, out_dim=out_dim)
 
-        self.fusion = OmicsAttentionFusion(emb_dim=256)
+        self.fusion = OmicsAttentionFusion(emb_dim=out_dim)
         # self.project = ProjectionAttention(256, out_dim)
-        self.project = nn.Linear(256, out_dim)
+        # self.project = nn.Linear(256, out_dim)
 
     def forward(self, mrna, mirna, prot, return_attention=False):
         """
@@ -122,22 +127,22 @@ class OmicsFusionModel(nn.Module):
             prot: Tensor of shape [batch, prot_dim]
             return_attention: If True, also return omics fusion attention weights
         Returns:
-            Fused omics embedding of shape [batch, 768]
-            If return_attention: also returns attention weights [batch, num_heads, 3, 3]
-                Attention matrix indices: 0=mRNA, 1=miRNA, 2=Proteomics
+            Fused omics embedding of shape [batch, out_dim]
+            If return_attention: also returns attention weights [batch, num_heads, 4, 4]
+                Attention matrix indices: 0=CLS, 1=mRNA, 2=miRNA, 3=Proteomics
         """
-        e1 = self.mrna_encoder(mrna)   # [batch, 256]
-        e2 = self.mirna_encoder(mirna)  # [batch, 256]
-        e3 = self.prot_encoder(prot)    # [batch, 256]
+        e1 = self.mrna_encoder(mrna)   # [batch, out_dim]
+        e2 = self.mirna_encoder(mirna)  # [batch, out_dim]
+        e3 = self.prot_encoder(prot)    # [batch, out_dim]
 
-        stacked = torch.stack([e1, e2, e3], dim=1)  # [batch, 3, 256]
+        stacked = torch.stack([e1, e2, e3], dim=1)  # [batch, 3, out_dim]
         
         if return_attention:
-            fused_256, omics_attn = self.fusion(stacked, return_attention=True)
+            fused_768, omics_attn = self.fusion(stacked, return_attention=True)
         else:
-            fused_256 = self.fusion(stacked)
+            fused_768 = self.fusion(stacked)
             
-        fused_768 = self.project(fused_256)  # [batch, 768]
+        # fused_768 = self.project(fused_256)  # [batch, 768]
 
         if return_attention:
             return fused_768, omics_attn
@@ -168,11 +173,11 @@ class SynergyModel(nn.Module):
         
         self.head_type = head_type
 
-        # Trainable omics encoder: raw omics -> 768-dim embedding
+        # Trainable omics encoder: raw omics -> embed_dim embedding
         self.omics_encoder = OmicsFusionModel(mrna_dim, mirna_dim, prot_dim, out_dim=embed_dim)
 
         # Prediction head - takes concatenated [drug1, drug2, omics] = 3 * embed_dim
-        input_dim = embed_dim * 3  # 2304
+        input_dim = embed_dim * 3
         
         if head_type == "mlp":
             # Use ready-made SynergyMLP: 2304 -> 1024 -> 256 -> 1
@@ -186,8 +191,8 @@ class SynergyModel(nn.Module):
     def forward(self, drug1_emb, drug2_emb, mrna, mirna, prot, return_attention=False):
         """
         Args:
-            drug1_emb: Tensor of shape [batch, 768] - frozen drug embedding
-            drug2_emb: Tensor of shape [batch, 768] - frozen drug embedding
+            drug1_emb: Tensor of shape [batch, embed_dim] - frozen drug embedding
+            drug2_emb: Tensor of shape [batch, embed_dim] - frozen drug embedding
             mrna: Tensor of shape [batch, mrna_dim] - raw mRNA features
             mirna: Tensor of shape [batch, mirna_dim] - raw miRNA features
             prot: Tensor of shape [batch, prot_dim] - raw proteomics features
@@ -195,8 +200,8 @@ class SynergyModel(nn.Module):
         Returns:
             Synergy prediction of shape [batch, 1]
             If return_attention: also returns dict with attention weights:
-                - 'omics_fusion': [batch, 4, 3, 3] - Omics modality attention
-                    (indices: 0=mRNA, 1=miRNA, 2=Proteomics)
+                - 'omics_fusion': [batch, num_heads, 4, 4] - Omics modality attention
+                    (indices: 0=CLS, 1=mRNA, 2=miRNA, 3=Proteomics)
         """
         # Encode raw omics to embedding
         if return_attention:
@@ -205,14 +210,14 @@ class SynergyModel(nn.Module):
             omics_emb = self.omics_encoder(mrna, mirna, prot)
 
         # Concatenate drug and omics embeddings
-        fused = torch.cat([drug1_emb, drug2_emb, omics_emb], dim=1)  # [batch, 2304]
+        fused = torch.cat([drug1_emb, drug2_emb, omics_emb], dim=1)  # [batch, 3*embed_dim]
 
         # Predict synergy score using the selected head (MLP or KAN)
         output = self.head(fused)
         
         if return_attention:
             attention_weights = {
-                'omics_fusion': omics_attn  # [batch, 4, 3, 3] - mRNA, miRNA, Proteomics
+                'omics_fusion': omics_attn  # [batch, num_heads, 4, 4] - CLS, mRNA, miRNA, Proteomics
             }
             return output, attention_weights
         

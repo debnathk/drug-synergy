@@ -1,7 +1,6 @@
 """
 Description: Create encoder for omics, save unique omics embeddings as .pt
 Outcome: Embeddings of unique omics as .pt
-Author: Kusal Debnath
 """
 
 import torch

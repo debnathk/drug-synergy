@@ -1,7 +1,6 @@
 """
 Description: Split synergy dataset into train, val and test and save splits as pkl (CSV is not recommended because of the heterogenous schema of the data)
 Outcome: Train-val-test data as .pkl
-Author: Kusal Debnath
 """
 
 import torch

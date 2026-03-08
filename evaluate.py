@@ -2,8 +2,6 @@
 Evaluation script for Drug Synergy Prediction models.
 Computes comprehensive metrics: MSE, MAE, R², Pearson, Spearman correlations.
 Supports both SynergyModel (attention-based) and SynergyMLP (baseline).
-
-Author: Kusal Debnath
 """
 
 import torch
@@ -41,8 +39,19 @@ def get_raw_path(split_type: str) -> Path:
     return subdir
 
 
-def get_drug_emb_path(split_type: str) -> Path:
-    """Resolve drug embeddings path; fallback to drug_embeddings.pt for backward compat."""
+def get_drug_emb_path(split_type: str, drug_model: str = None) -> Path:
+    """Resolve drug embeddings path; fallback to older formats for backward compat.
+    
+    Priority order:
+    1. drug_embeddings_{split_type}_{model}.pt (new format with model name)
+    2. drug_embeddings_{split_type}.pt (intermediate format)
+    3. drug_embeddings.pt (legacy format)
+    """
+    if drug_model:
+        new_format = EMBEDDINGS_PATH / f"drug_embeddings_{split_type}_{drug_model}.pt"
+        if new_format.exists():
+            return new_format
+    
     specific = EMBEDDINGS_PATH / f"drug_embeddings_{split_type}.pt"
     default = EMBEDDINGS_PATH / "drug_embeddings.pt"
     return specific if specific.exists() else default
@@ -180,15 +189,17 @@ def load_synergy_model(checkpoint_path: Path, mrna_dim: int, mirna_dim: int, pro
     """Load SynergyModel from checkpoint. Returns model and scaler."""
     checkpoint = torch.load(checkpoint_path, map_location=device)
 
-    # Extract head_type and grid_size from checkpoint config (if available)
+    # Extract model config from checkpoint (if available)
     config = checkpoint.get("config", {})
     head_type = config.get("head_type", "mlp")
     grid_size = config.get("grid_size", 5) or 5  # Handle None
+    embed_dim = config.get("drug_emb_dim", 768)  # Support different embedding dims
 
     model = SynergyModel(
         mrna_dim=mrna_dim,
         mirna_dim=mirna_dim,
         prot_dim=prot_dim,
+        embed_dim=embed_dim,
         head_type=head_type,
         grid_size=grid_size,
     ).to(device)
@@ -201,6 +212,7 @@ def load_synergy_model(checkpoint_path: Path, mrna_dim: int, mirna_dim: int, pro
     print(f"Loaded SynergyModel from {checkpoint_path}")
     print(f"  - Checkpoint epoch: {checkpoint.get('epoch', 'N/A')}")
     print(f"  - Checkpoint val_loss: {checkpoint.get('val_loss', 'N/A'):.4f}")
+    print(f"  - Embedding dimension: {embed_dim}")
     print(f"  - Head type: {head_type}" + (f", grid_size={grid_size}" if head_type == "kan" else ""))
 
     if scaler.fitted:
@@ -211,11 +223,15 @@ def load_synergy_model(checkpoint_path: Path, mrna_dim: int, mirna_dim: int, pro
     return model, scaler
 
 
-def load_mlp_model(checkpoint_path: Path, input_dim: int = 2304):
+def load_mlp_model(checkpoint_path: Path):
     """Load SynergyMLP from checkpoint."""
-    model = SynergyMLP(input_dim=input_dim).to(device)
-    
     checkpoint = torch.load(checkpoint_path, map_location=device)
+    config = checkpoint.get("config", {})
+
+    embed_dim = config.get("drug_emb_dim", 768)
+    input_dim = embed_dim * 3
+    
+    model = SynergyMLP(input_dim=input_dim).to(device)
     model.load_state_dict(checkpoint['model_state_dict'])
     print(f"Loaded SynergyMLP from {checkpoint_path}")
     
@@ -309,9 +325,8 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
     
     raw_path = get_raw_path(args.split_type)
-    drug_emb_path = get_drug_emb_path(args.split_type)
-
     target_col = args.target
+    
     print(f"Device: {device}")
     print(f"Split type: {args.split_type}, evaluation split: {args.split}, target: {target_col}")
     print(f"Output directory: {output_dir}")
@@ -334,26 +349,20 @@ def main():
         'timestamp': datetime.now().isoformat()
     }
     
+    # Default drug_emb_path for MLP-only evaluation (will be overridden if attention model is evaluated)
+    drug_emb_path = get_drug_emb_path(args.split_type, None)
+    
     # Evaluate Attention Model
     if args.model in ['attention', 'both']:
         print("\n" + "="*60)
         print(" Evaluating SynergyModel (Attention-based)")
         print("="*60)
         
-        # Create dataset
-        attn_dataset = DrugSynergyRawOmicsDataset(eval_df, drug_emb_path, target_col)
-        attn_loader = DataLoader(attn_dataset, batch_size=args.batch_size, shuffle=False)
-        
-        # Get omics dimensions
-        mrna_dim, mirna_dim, prot_dim = attn_dataset.get_omics_dims()
-        print(f"Omics dimensions - mRNA: {mrna_dim}, miRNA: {mirna_dim}, Proteomics: {prot_dim}")
-        
-        # Load model
+        # Resolve checkpoint path first (to get drug_model for embeddings)
         if args.checkpoint:
             checkpoint_path = Path(args.checkpoint)
         else:
             # Find the latest SynergyModel checkpoint (supports various naming conventions)
-            # Covers: kan_std_random_*, mlp_std_random_*, synergy_kan_*, synergy_attn_*, synergy_mlp_*, etc.
             checkpoint_candidates = []
             for pattern in ["kan_*", "mlp_*", "synergy_kan_*", "synergy_attn_*", "synergy_mlp_*"]:
                 for d in LOG_PATH.glob(pattern):
@@ -364,9 +373,22 @@ def main():
                 raise FileNotFoundError(
                     "No SynergyModel checkpoint found! Please provide --checkpoint or train a model first."
                 )
-            # Pick the most recently modified checkpoint
             checkpoint_path = max(checkpoint_candidates, key=lambda p: p.stat().st_mtime)
             print(f"Auto-detected checkpoint: {checkpoint_path}")
+        
+        # Read checkpoint config to get drug_model for correct embeddings
+        checkpoint_config = torch.load(checkpoint_path, map_location='cpu').get('config', {})
+        drug_model = checkpoint_config.get('drug_model', None)
+        drug_emb_path = get_drug_emb_path(args.split_type, drug_model)
+        print(f"Drug embeddings: {drug_emb_path}" + (f" (model: {drug_model})" if drug_model else ""))
+        
+        # Create dataset
+        attn_dataset = DrugSynergyRawOmicsDataset(eval_df, drug_emb_path, target_col)
+        attn_loader = DataLoader(attn_dataset, batch_size=args.batch_size, shuffle=False)
+        
+        # Get omics dimensions
+        mrna_dim, mirna_dim, prot_dim = attn_dataset.get_omics_dims()
+        print(f"Omics dimensions - mRNA: {mrna_dim}, miRNA: {mirna_dim}, Proteomics: {prot_dim}")
         
         attn_model, attn_scaler = load_synergy_model(checkpoint_path, mrna_dim, mirna_dim, prot_dim)
         

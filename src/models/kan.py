@@ -1,7 +1,6 @@
 """
 Description: Kolmogorov-Arnold Network (KAN) implementation using B-spline basis functions.
              KAN replaces traditional linear layers with learnable univariate spline functions.
-Author: Kusal Debnath
 """
 
 import torch

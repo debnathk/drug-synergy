@@ -2,6 +2,8 @@ archive
 data
 test
 docs
+assets/
+logs/
 *.csv
 *.txt
 *.zip

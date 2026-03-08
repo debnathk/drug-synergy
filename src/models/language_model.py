@@ -1,7 +1,5 @@
 """
 Description: Language model class to generate drug embeddings from molecule SMILES
-
-Author: Kusal Debnath
 """
 
 import torch
@@ -36,6 +34,34 @@ class MolFormerMLM:
             embeddings.append(embedding)
 
         return np.vstack(embeddings)
+
+class ChemBERTaMLM:
+    """
+    ChemBERTa Language Model class for getting embeddings for molecules smiles
+    """
+    def __init__(self, model_name="DeepChem/ChemBERTa-77M-MLM"):
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self.model = AutoModel.from_pretrained(model_name)
+        
+    def get_molecule_embedding(self, smiles):
+        """Get embeddings for a molecule from its SMILES string"""
+        inputs = self.tokenizer(smiles, return_tensors="pt")
+        with torch.no_grad():
+            outputs = self.model(**inputs)
+        
+        # Use the CLS token embedding as the molecule representation
+        return outputs.last_hidden_state[:, 0, :].numpy()
+    
+    def get_batch_embeddings(self, smiles_list):
+        """Get embeddings for a batch of molecules"""
+        embeddings = []
+        
+        for smiles in smiles_list:
+            embedding = self.get_molecule_embedding(smiles)
+            embeddings.append(embedding)
+            
+        return np.vstack(embeddings)
+
     
 if __name__ == "__main__":
     known_smiles = {

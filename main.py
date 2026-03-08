@@ -150,8 +150,19 @@ def get_raw_path(split_type: str) -> Path:
     return subdir
 
 
-def get_drug_emb_path(split_type: str) -> Path:
-    """Resolve drug embeddings path; fallback to drug_embeddings.pt for backward compat."""
+def get_drug_emb_path(split_type: str, drug_model: str = None) -> Path:
+    """Resolve drug embeddings path; fallback to older formats for backward compat.
+    
+    Priority order:
+    1. drug_embeddings_{split_type}_{model}.pt (new format with model name)
+    2. drug_embeddings_{split_type}.pt (intermediate format)
+    3. drug_embeddings.pt (legacy format)
+    """
+    if drug_model:
+        new_format = EMBEDDINGS_PATH / f"drug_embeddings_{split_type}_{drug_model}.pt"
+        if new_format.exists():
+            return new_format
+    
     specific = EMBEDDINGS_PATH / f"drug_embeddings_{split_type}.pt"
     default = EMBEDDINGS_PATH / "drug_embeddings.pt"
     return specific if specific.exists() else default
@@ -356,6 +367,11 @@ def parse_args():
     parser.add_argument('--split_type', type=str, default='random',
                         choices=['random', 'cold_drug'],
                         help='Data split type: random or cold_drug (default: random)')
+    parser.add_argument('--drug_emb_dim', type=int, default=768,
+                        help='Drug embedding dimension (768 for MolFormer, 384 for ChemBERTa)')
+    parser.add_argument('--drug_model', type=str, default=None,
+                        choices=['molformer', 'chemberta'],
+                        help='Drug embedding model to use (for loading embeddings)')
     return parser.parse_args()
 
 
@@ -383,8 +399,9 @@ if __name__ == "__main__":
     
     # Load data
     raw_path = get_raw_path(args.split_type)
-    drug_emb_path = get_drug_emb_path(args.split_type)
+    drug_emb_path = get_drug_emb_path(args.split_type, args.drug_model)
     logger.info(f"Split type: {args.split_type}, raw path: {raw_path}, drug embeddings: {drug_emb_path}")
+    logger.info(f"Drug embedding dimension: {args.drug_emb_dim}")
     logger.info("Loading datasets...")
     with open(raw_path / "train_split.pkl", "rb") as file:
         train_df = pickle.load(file)
@@ -436,6 +453,8 @@ if __name__ == "__main__":
         "model": f"SynergyModel ({args.head_type.upper()} Head)",
         "head_type": args.head_type,
         "grid_size": args.grid_size if args.head_type == "kan" else None,
+        "drug_emb_dim": args.drug_emb_dim,
+        "drug_model": args.drug_model,
         "mrna_dim": mrna_dim,
         "mirna_dim": mirna_dim,
         "prot_dim": prot_dim,
@@ -475,6 +494,7 @@ if __name__ == "__main__":
         mrna_dim=mrna_dim,
         mirna_dim=mirna_dim,
         prot_dim=prot_dim,
+        embed_dim=args.drug_emb_dim,
         head_type=args.head_type,
         grid_size=args.grid_size
     ).to(device)

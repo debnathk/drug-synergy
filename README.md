@@ -8,30 +8,29 @@ End-to-end deep learning pipeline for predicting drug combination synergy scores
 
 ```
 drug-synergy/
-├── main.py                     # Training script
-├── evaluate.py                 # Evaluation script
+├── main.py                     # Main training script
+├── evaluate.py                 # Model evaluation script
 ├── analyze_attention.py        # Attention weight analysis and visualization
+├── ablation.py                 # Omics leave-one-out ablation study
+├── data_scaling.py             # Data scaling study (25%, 50%, 75%, 100%)
 ├── run_main.sh                 # SLURM batch script for cluster experiments
-├── requirements.txt            # Python dependencies
 ├── src/
 │   ├── __init__.py
 │   ├── dataset.py              # Dataset classes and TDC data splitting
 │   ├── utils.py                # Metrics, bootstrap, PrettyTable formatting
-│   ├── drugs_embeddings.py     # Drug embedding generation (MolFormer-XL)
+│   ├── drugs_embeddings.py     # Drug embedding generation (MolFormer, ChemBERTa)
 │   ├── omics_embeddings.py     # Pre-computed omics embedding generation (legacy)
 │   └── models/
 │       ├── __init__.py         # Exports: SynergyMLP, SynergyKAN, KANLinear, SynergyModel
 │       ├── synergy_model.py    # End-to-end model with omics encoder + attention fusion
 │       ├── mlp.py              # MLP prediction head
 │       ├── kan.py              # KAN prediction head (B-spline basis)
-│       └── language_model.py   # MolFormer-XL wrapper for SMILES embeddings
+│       └── language_model.py   # MolFormer-XL and ChemBERTa wrappers for SMILES embeddings
 ├── data/
 │   ├── raw/<split_type>/       # Train/val/test splits (random/, cold_drug/)
-│   ├── embeddings/             # Drug embeddings (.pt) per split type
+│   ├── embeddings/             # Drug embeddings (.pt) per split type and model
 │   └── models/                 # Saved omics encoder weights
-├── logs/                       # Experiment logs, checkpoints, plots
-├── assets/                     # Saved figures
-└── docs/                       # Problem statement, implementation plan, report
+└── docs/                       # Documentation (excluded from repo)
 ```
 
 ---
@@ -40,26 +39,30 @@ drug-synergy/
 
 ### SynergyModel (`src/models/synergy_model.py`)
 
-The main model. Combines frozen drug embeddings with a trainable omics encoder and predicts a synergy score.
+The main model combines frozen drug embeddings with a trainable omics encoder and predicts a synergy score.
 
 | Component | Description |
 |---|---|
-| `OmicsEncoder` | Per-modality encoder: `BatchNorm -> Linear(in, 512) -> BatchNorm -> ReLU -> Linear(512, 256)` |
-| `OmicsAttentionFusion` | Multi-head self-attention (4 heads) over the 3 modality embeddings (mRNA, miRNA, proteomics) -> mean-pooled 256-dim |
-| `ProjectionAttention` | Attention-based projection from 256-dim to 768-dim |
-| `OmicsFusionModel` | Chains the above: raw omics -> 768-dim fused embedding |
-| `SynergyModel` | Concatenates `[drug1_emb, drug2_emb, omics_emb]` (2304-dim) and passes through a prediction head |
+| `OmicsEncoder` | Per-modality encoder: `Linear(in, 1024) -> BatchNorm -> ReLU -> Linear(1024, embed_dim)` |
+| `OmicsAttentionFusion` | Multi-head self-attention (4 heads) with learnable CLS token over [CLS, mRNA, miRNA, Proteomics] -> CLS output as fused representation |
+| `OmicsFusionModel` | Chains the above: raw omics -> embed_dim fused embedding |
+| `SynergyModel` | Concatenates `[drug1_emb, drug2_emb, omics_emb]` (3 × embed_dim) and passes through a prediction head |
 
 ### Prediction Heads
 
 | Head | Architecture | Module |
 |---|---|---|
-| **MLP** | `2304 -> 1024 -> ReLU -> Dropout -> 256 -> ReLU -> 1` | `SynergyMLP` (`src/models/mlp.py`) |
-| **KAN** | `2304 -> 128 -> 32 -> 1` (B-spline basis functions) | `SynergyKAN` (`src/models/kan.py`) |
+| **MLP** | `3*embed_dim -> 1024 -> ReLU -> Dropout -> 256 -> ReLU -> 1` | `SynergyMLP` (`src/models/mlp.py`) |
+| **KAN** | `3*embed_dim -> 128 -> 32 -> 1` (B-spline basis functions) | `SynergyKAN` (`src/models/kan.py`) |
 
-### Drug Embedding Model (`src/models/language_model.py`)
+### Drug Embedding Models (`src/models/language_model.py`)
 
-`MolFormerMLM`: Wraps the MolFormer-XL language model. Takes SMILES strings and returns 768-dim molecular embeddings. Used in the preprocessing step; embeddings are frozen during training.
+| Model | Class | Output Dim | Description |
+|---|---|---|---|
+| **MolFormer-XL** | `MolFormerMLM` | 768 | IBM's MolFormer language model for SMILES |
+| **ChemBERTa** | `ChemBERTaMLM` | 384 | DeepChem's ChemBERTa model for SMILES |
+
+Drug embeddings are frozen during training.
 
 ---
 
@@ -79,24 +82,36 @@ Data comes from the **DrugComb** dataset via TDC (`tdc.multi_pred.DrugSyn`).
 | `random` | `data.get_split(method='random')` | Random train/val/test split (default) |
 | `cold_drug` | `data.get_split(method='cold_split', column_name='Drug1')` | Test set contains Drug1 entities unseen in training |
 
-Splits are stored under `data/raw/<split_type>/` (e.g. `data/raw/random/train_split.pkl`).
+Splits are stored under `data/raw/<split_type>/` (e.g., `data/raw/random/train_split.pkl`).
 
 Generate splits:
 
 ```bash
 python -m src.dataset --split_type all      # both random and cold_drug
-python -m src.dataset --split_type random    # only random
+python -m src.dataset --split_type random   # only random
 ```
 
 ---
 
 ## Drug Embeddings (`src/drugs_embeddings.py`)
 
-Generates MolFormer-XL embeddings for all unique drugs in a given split type. Saved as `data/embeddings/drug_embeddings_<split_type>.pt`.
+Generates drug embeddings for all unique drugs in a given split type. Supports multiple embedding models.
+
+**Output format:** `data/embeddings/drug_embeddings_<split_type>_<model>.pt`
+
+| Argument | Default | Description |
+|---|---|---|
+| `--split_type` | `random` | Data split type: `random` or `cold_drug` |
+| `--model` | `molformer` | Embedding model: `molformer` (768-dim) or `chemberta` (384-dim) |
 
 ```bash
-python -m src.drugs_embeddings --split_type random
-python -m src.drugs_embeddings --split_type cold_drug
+# MolFormer embeddings (768-dim)
+python -m src.drugs_embeddings --split_type random --model molformer
+python -m src.drugs_embeddings --split_type cold_drug --model molformer
+
+# ChemBERTa embeddings (384-dim)
+python -m src.drugs_embeddings --split_type random --model chemberta
+python -m src.drugs_embeddings --split_type cold_drug --model chemberta
 ```
 
 ---
@@ -118,12 +133,21 @@ Trains a `SynergyModel` with either an MLP or KAN prediction head. Uses MSE loss
 | `--head_type` | `kan` | Prediction head (`mlp` or `kan`) |
 | `--grid_size` | `5` | KAN grid size (only if `head_type=kan`) |
 | `--split_type` | `random` | Data split (`random` or `cold_drug`) |
+| `--drug_emb_dim` | `768` | Drug embedding dimension (768 for MolFormer, 384 for ChemBERTa) |
+| `--drug_model` | `None` | Drug embedding model (`molformer` or `chemberta`) for loading embeddings |
 
 ### Example
 
 ```bash
-python main.py --exp_name kan_std --standardize --head_type kan --epochs 10
-python main.py --exp_name mlp_std --standardize --head_type mlp --epochs 10 --split_type cold_drug
+# Train with MolFormer embeddings (default)
+python main.py --exp_name kan_std --standardize --head_type kan --epochs 50
+
+# Train with ChemBERTa embeddings
+python main.py --exp_name mlp_chemberta --standardize --head_type mlp --epochs 50 \
+    --drug_model chemberta --drug_emb_dim 384
+
+# Cold drug split
+python main.py --exp_name mlp_cold --standardize --head_type mlp --split_type cold_drug
 ```
 
 ### Outputs (per run in `logs/<exp_name>_<timestamp>/`)
@@ -143,6 +167,8 @@ python main.py --exp_name mlp_std --standardize --head_type mlp --epochs 10 --sp
 
 Evaluates a trained model on a chosen split. Reports MSE, RMSE, MAE, R-squared, Pearson, Spearman and a PrettyTable with RMSE, SCC, PCC (with bootstrap std).
 
+The script automatically reads `drug_model` and `drug_emb_dim` from the checkpoint config to load the correct embeddings.
+
 ### CLI Arguments
 
 | Argument | Default | Description |
@@ -159,8 +185,73 @@ Evaluates a trained model on a chosen split. Reports MSE, RMSE, MAE, R-squared, 
 
 ```bash
 python evaluate.py --split_type random --split test
-python evaluate.py --checkpoint logs/kan_std_random_20260129/checkpoint_best.pt --split test
+python evaluate.py --checkpoint logs/kan_std_random_*/checkpoint_best.pt --split test
 ```
+
+---
+
+## Ablation Study (`ablation.py`)
+
+Omics leave-one-out ablation study. Trains SynergyModel under four conditions (drug embeddings always active):
+
+| Condition | Description |
+|---|---|
+| `no_mrna` | mRNA zeroed, miRNA + Proteomics active |
+| `no_mirna` | miRNA zeroed, mRNA + Proteomics active |
+| `no_prot` | Proteomics zeroed, mRNA + miRNA active |
+| `no_omics` | All omics zeroed (drug embeddings only baseline) |
+
+### CLI Arguments
+
+| Argument | Default | Description |
+|---|---|---|
+| `--exp_name` | auto-generated | Experiment name prefix |
+| `--conditions` | all | Conditions to run (space-separated) |
+| `--standardize` | `False` | Standardize targets |
+| `--epochs` | `50` | Number of epochs |
+| `--head_type` | `mlp` | Prediction head (`mlp` or `kan`) |
+| `--split_type` | `random` | Data split type |
+| `--target` | `Synergy_ZIP` | Target column |
+
+### Example
+
+```bash
+# Run all ablation conditions
+python ablation.py --standardize --epochs 50 --head_type mlp --split_type random
+
+# Run specific conditions
+python ablation.py --conditions no_mrna no_mirna --standardize --epochs 50
+```
+
+---
+
+## Data Scaling Study (`data_scaling.py`)
+
+Trains SynergyModel on progressively larger fractions of training data (25%, 50%, 75%, 100%) while keeping validation and test sets fixed. Reveals whether the model would benefit from more data.
+
+### CLI Arguments
+
+| Argument | Default | Description |
+|---|---|---|
+| `--exp_name` | auto-generated | Experiment name prefix |
+| `--fractions` | `0.25 0.50 0.75 1.00` | Training data fractions to evaluate |
+| `--standardize` | `False` | Standardize targets |
+| `--epochs` | `50` | Number of epochs |
+| `--head_type` | `mlp` | Prediction head |
+| `--target` | `Synergy_ZIP` | Target column |
+| `--seed` | `42` | Random seed for reproducible subsampling |
+
+### Example
+
+```bash
+python data_scaling.py --standardize --epochs 50 --head_type mlp
+```
+
+### Outputs
+
+- Per-fraction training logs and checkpoints
+- `scaling_curves.png` -- Performance vs. data fraction plot
+- `summary.json` -- Aggregated metrics across fractions
 
 ---
 
@@ -173,31 +264,20 @@ Extracts and visualizes omics fusion attention weights from a trained SynergyMod
 | Argument | Default | Description |
 |---|---|---|
 | `--checkpoint` | auto-detect | Path to checkpoint |
-| `--split` | `val` | Split to analyze |
+| `--split` | `test` | Split to analyze |
 | `--split_type` | `random` | Data split type |
-| `--num_samples` | `1000` | Number of samples to analyze |
+| `--target` | `Synergy_ZIP` | Target column |
+| `--num_samples` | all | Number of samples to analyze |
 | `--batch_size` | `64` | Batch size |
 | `--output_dir` | auto-generated | Output directory |
 
 ### Outputs
 
-- Average attention matrices (omics fusion)
-- Per-head attention heatmaps
-- Attention weight distributions
-- High vs low synergy attention comparison
-
----
-
-## Utility Functions (`src/utils.py`)
-
-| Function | Description |
-|---|---|
-| `compute_regression_metrics(y_true, y_pred)` | Returns `{RMSE, SCC, PCC}` |
-| `compute_metrics_with_std(y_true, y_pred, n_bootstrap=200)` | Returns `{RMSE: (mean, std), SCC: (mean, std), PCC: (mean, std)}` via bootstrap |
-| `format_metrics_table_pretty(metrics_with_std, title)` | Returns PrettyTable string with `value (std)` format |
-| `standardize(target_col)` | Standardizes a column using `StandardScaler` |
-| `visualize_omics_data()` | Box plots for mRNA, miRNA, proteomics distributions |
-| `visualize_target_col_distribution()` | Box plot for synergy score distribution |
+- CLS-to-modality attention weights (which omics the model focuses on)
+- Full self-attention matrix heatmaps
+- Per-head attention analysis
+- Attention patterns by synergy level (high vs low)
+- `attention_report.txt` -- Summary statistics
 
 ---
 
@@ -229,16 +309,39 @@ All three are reported with bootstrap standard deviation (200 samples) in a Pret
 # 1. Generate data splits
 python -m src.dataset --split_type all
 
-# 2. Generate drug embeddings
-python -m src.drugs_embeddings --split_type random
-python -m src.drugs_embeddings --split_type cold_drug
+# 2. Generate drug embeddings (choose one or both)
+python -m src.drugs_embeddings --split_type random --model molformer
+python -m src.drugs_embeddings --split_type random --model chemberta
 
-# 3. Train (KAN head, standardized, random split, 10 epochs)
-python main.py --exp_name kan_std --standardize --head_type kan --epochs 10
+# 3. Train (MLP head, standardized, random split, 50 epochs)
+python main.py --exp_name mlp_std --standardize --head_type mlp --epochs 50
 
-# 4. Evaluate
+# 4. Evaluate on test set
 python evaluate.py --split_type random --split test
 
 # 5. Analyze attention weights
-python analyze_attention.py --split_type random --split val
+python analyze_attention.py --split_type random --split test
+
+# 6. (Optional) Run ablation study
+python ablation.py --standardize --epochs 50 --head_type mlp
+
+# 7. (Optional) Run data scaling study
+python data_scaling.py --standardize --epochs 50 --head_type mlp
 ```
+
+---
+
+## Requirements
+
+- Python 3.8+
+- PyTorch 1.12+
+- transformers
+- tdc (Therapeutics Data Commons)
+- scikit-learn
+- scipy
+- numpy
+- pandas
+- matplotlib
+- seaborn
+- tqdm
+- prettytable

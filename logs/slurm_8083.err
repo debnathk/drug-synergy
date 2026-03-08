@@ -1,104 +1,0 @@
-Found local copy...
-Loading...
-Done!
-Found local copy...
-Loading...
-Done!
-2026-01-29 17:38:23.014538: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F AVX512_VNNI FMA
-To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
-2026-01-29 17:38:23.120077: I tensorflow/core/util/util.cc:169] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
-2026-01-29 17:38:23.124707: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory; LD_LIBRARY_PATH: /usr/local/cuda-13.0/lib64:/usr/local/lib/egr/modules/openmpi/lib/x86_64-linux-gnu:/usr/local/lib/egr/modules/python3.12/lib/x86_64-linux-gnu:/usr/local/lib/egr/modules/python3.12/lib:/usr/lib/jvm/java-21-amazon-corretto/lib
-2026-01-29 17:38:23.124750: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
-2026-01-29 17:38:23.147451: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-2026-01-29 17:38:23.558826: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory; LD_LIBRARY_PATH: /usr/local/cuda-13.0/lib64:/usr/local/lib/egr/modules/openmpi/lib/x86_64-linux-gnu:/usr/local/lib/egr/modules/python3.12/lib/x86_64-linux-gnu:/usr/local/lib/egr/modules/python3.12/lib:/usr/lib/jvm/java-21-amazon-corretto/lib
-2026-01-29 17:38:23.558981: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory; LD_LIBRARY_PATH: /usr/local/cuda-13.0/lib64:/usr/local/lib/egr/modules/openmpi/lib/x86_64-linux-gnu:/usr/local/lib/egr/modules/python3.12/lib/x86_64-linux-gnu:/usr/local/lib/egr/modules/python3.12/lib:/usr/lib/jvm/java-21-amazon-corretto/lib
-2026-01-29 17:38:23.559009: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
-Embedding:   0%|          | 0/5 [00:00<?, ?it/s]Embedding:  20%|██        | 1/5 [00:02<00:08,  2.12s/it]Embedding:  40%|████      | 2/5 [00:04<00:06,  2.06s/it]Embedding:  60%|██████    | 3/5 [00:06<00:03,  1.99s/it]Embedding:  80%|████████  | 4/5 [00:07<00:01,  1.93s/it]Embedding:  80%|████████  | 4/5 [00:07<00:01,  1.97s/it]
-2026-01-29 17:38:36.741628: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F AVX512_VNNI FMA
-To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
-2026-01-29 17:38:36.847038: I tensorflow/core/util/util.cc:169] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
-2026-01-29 17:38:36.851823: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory; LD_LIBRARY_PATH: /usr/local/cuda-13.0/lib64:/usr/local/lib/egr/modules/openmpi/lib/x86_64-linux-gnu:/usr/local/lib/egr/modules/python3.12/lib/x86_64-linux-gnu:/usr/local/lib/egr/modules/python3.12/lib:/usr/lib/jvm/java-21-amazon-corretto/lib
-2026-01-29 17:38:36.851922: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
-2026-01-29 17:38:36.874678: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-2026-01-29 17:38:37.284448: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory; LD_LIBRARY_PATH: /usr/local/cuda-13.0/lib64:/usr/local/lib/egr/modules/openmpi/lib/x86_64-linux-gnu:/usr/local/lib/egr/modules/python3.12/lib/x86_64-linux-gnu:/usr/local/lib/egr/modules/python3.12/lib:/usr/lib/jvm/java-21-amazon-corretto/lib
-2026-01-29 17:38:37.284590: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory; LD_LIBRARY_PATH: /usr/local/cuda-13.0/lib64:/usr/local/lib/egr/modules/openmpi/lib/x86_64-linux-gnu:/usr/local/lib/egr/modules/python3.12/lib/x86_64-linux-gnu:/usr/local/lib/egr/modules/python3.12/lib:/usr/lib/jvm/java-21-amazon-corretto/lib
-2026-01-29 17:38:37.284615: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
-Embedding:   0%|          | 0/5 [00:00<?, ?it/s]Embedding:  20%|██        | 1/5 [00:02<00:08,  2.02s/it]Embedding:  40%|████      | 2/5 [00:03<00:05,  1.98s/it]Embedding:  60%|██████    | 3/5 [00:05<00:03,  1.96s/it]Embedding:  80%|████████  | 4/5 [00:07<00:01,  1.94s/it]Embedding:  80%|████████  | 4/5 [00:07<00:01,  1.95s/it]
-2026-01-29 17:38:50 | INFO | Run directory: /home/debnathk/drug-synergy/logs/kan_std_random_20260129_173850
-2026-01-29 17:38:50 | INFO | Log file: /home/debnathk/drug-synergy/logs/kan_std_random_20260129_173850/training.log
-2026-01-29 17:38:50 | INFO | Script copied to /home/debnathk/drug-synergy/logs/kan_std_random_20260129_173850/main.py
-2026-01-29 17:38:50 | INFO | ================================================================================
-2026-01-29 17:38:50 | INFO | Starting Drug Synergy Prediction Training (KAN Head)
-2026-01-29 17:38:50 | INFO | ================================================================================
-2026-01-29 17:38:50 | INFO | Split type: random, raw path: /home/debnathk/drug-synergy/data/raw/random, drug embeddings: /home/debnathk/drug-synergy/data/embeddings/drug_embeddings_random.pt
-2026-01-29 17:38:50 | INFO | Loading datasets...
-2026-01-29 17:38:50 | INFO | Applying target standardization...
-2026-01-29 17:38:50 | INFO | Target scaler fitted - Mean: -0.8427, Std: 5.3524
-2026-01-29 17:38:50 | INFO | Original target range: [-36.01, 66.66]
-2026-01-29 17:38:50 | INFO | Standardized target range: [-6.57, 12.61]
-2026-01-29 17:38:50 | INFO | Datasets loaded successfully
-2026-01-29 17:38:50 | INFO | Configuration saved to /home/debnathk/drug-synergy/logs/kan_std_random_20260129_173850/config.json
-2026-01-29 17:38:50 | INFO | Device: cuda
-2026-01-29 17:38:50 | INFO | Training samples: 207968
-2026-01-29 17:38:50 | INFO | Validation samples: 29710
-2026-01-29 17:38:50 | INFO | Target column: Synergy_ZIP
-2026-01-29 17:38:50 | INFO | Target standardization: True
-2026-01-29 17:38:50 | INFO | Batch size: 64
-2026-01-29 17:38:50 | INFO | Learning rate: 0.0001
-2026-01-29 17:38:50 | INFO | Number of epochs: 10
-2026-01-29 17:38:50 | INFO | Omics dimensions - mRNA: 23808, miRNA: 627, Proteomics: 3171
-2026-01-29 17:38:50 | INFO | Running sanity check...
-2026-01-29 17:38:50 | INFO | Drug1 embedding shape: torch.Size([768])
-2026-01-29 17:38:50 | INFO | Drug2 embedding shape: torch.Size([768])
-2026-01-29 17:38:50 | INFO | mRNA shape: torch.Size([23808])
-2026-01-29 17:38:50 | INFO | miRNA shape: torch.Size([627])
-2026-01-29 17:38:50 | INFO | Proteomics shape: torch.Size([3171])
-2026-01-29 17:38:50 | INFO | Target shape: torch.Size([1])
-2026-01-29 17:38:50 | INFO | Target sample: -0.1987028419971466
-2026-01-29 17:38:50 | INFO | Train batches: 3250
-2026-01-29 17:38:50 | INFO | Validation batches: 465
-2026-01-29 17:38:50 | INFO | Initializing SynergyModel with KAN head...
-2026-01-29 17:38:51 | INFO | Total parameters: 20,599,532
-2026-01-29 17:38:51 | INFO | Trainable parameters: 20,599,532
-2026-01-29 17:38:51 | INFO | ================================================================================
-2026-01-29 17:38:51 | INFO | Starting Training
-2026-01-29 17:38:51 | INFO | ================================================================================
-Training Progress:   0%|          | 0/10 [00:00<?, ?it/s]2026-01-29 17:40:02 | INFO | Best model saved at epoch 1 with val_loss: 0.7445
-Training Progress:   0%|          | 0/10 [01:10<?, ?it/s, Epoch=01, Train=0.7961, Val=0.7445, Best=0.7445]Training Progress:  10%|█         | 1/10 [01:10<10:32, 70.33s/it, Epoch=01, Train=0.7961, Val=0.7445, Best=0.7445]2026-01-29 17:41:12 | INFO | Best model saved at epoch 2 with val_loss: 0.6754
-Training Progress:  10%|█         | 1/10 [02:21<10:32, 70.33s/it, Epoch=02, Train=0.7106, Val=0.6754, Best=0.6754]Training Progress:  20%|██        | 2/10 [02:21<09:25, 70.66s/it, Epoch=02, Train=0.7106, Val=0.6754, Best=0.6754]2026-01-29 17:42:24 | INFO | Best model saved at epoch 3 with val_loss: 0.6489
-Training Progress:  20%|██        | 2/10 [03:32<09:25, 70.66s/it, Epoch=03, Train=0.6565, Val=0.6489, Best=0.6489]Training Progress:  30%|███       | 3/10 [03:32<08:17, 71.11s/it, Epoch=03, Train=0.6565, Val=0.6489, Best=0.6489]2026-01-29 17:43:37 | INFO | Best model saved at epoch 4 with val_loss: 0.6248
-Training Progress:  30%|███       | 3/10 [04:46<08:17, 71.11s/it, Epoch=04, Train=0.6229, Val=0.6248, Best=0.6248]Training Progress:  40%|████      | 4/10 [04:46<07:11, 71.94s/it, Epoch=04, Train=0.6229, Val=0.6248, Best=0.6248]2026-01-29 17:44:50 | INFO | Best model saved at epoch 5 with val_loss: 0.6010
-Training Progress:  40%|████      | 4/10 [05:58<07:11, 71.94s/it, Epoch=05, Train=0.5971, Val=0.6010, Best=0.6010]Training Progress:  50%|█████     | 5/10 [05:58<06:01, 72.22s/it, Epoch=05, Train=0.5971, Val=0.6010, Best=0.6010]2026-01-29 17:46:01 | INFO | Best model saved at epoch 6 with val_loss: 0.5911
-Training Progress:  50%|█████     | 5/10 [07:09<06:01, 72.22s/it, Epoch=06, Train=0.5758, Val=0.5911, Best=0.5911]Training Progress:  60%|██████    | 6/10 [07:09<04:46, 71.71s/it, Epoch=06, Train=0.5758, Val=0.5911, Best=0.5911]2026-01-29 17:47:14 | INFO | Best model saved at epoch 7 with val_loss: 0.5767
-Training Progress:  60%|██████    | 6/10 [08:22<04:46, 71.71s/it, Epoch=07, Train=0.5587, Val=0.5767, Best=0.5767]Training Progress:  70%|███████   | 7/10 [08:22<03:36, 72.14s/it, Epoch=07, Train=0.5587, Val=0.5767, Best=0.5767]2026-01-29 17:48:25 | INFO | Best model saved at epoch 8 with val_loss: 0.5703
-Training Progress:  70%|███████   | 7/10 [09:34<03:36, 72.14s/it, Epoch=08, Train=0.5435, Val=0.5703, Best=0.5703]Training Progress:  80%|████████  | 8/10 [09:34<02:23, 71.95s/it, Epoch=08, Train=0.5435, Val=0.5703, Best=0.5703]2026-01-29 17:49:36 | INFO | Best model saved at epoch 9 with val_loss: 0.5695
-Training Progress:  80%|████████  | 8/10 [10:44<02:23, 71.95s/it, Epoch=09, Train=0.5283, Val=0.5695, Best=0.5695]Training Progress:  90%|█████████ | 9/10 [10:44<01:11, 71.58s/it, Epoch=09, Train=0.5283, Val=0.5695, Best=0.5695]2026-01-29 17:50:48 | INFO | Best model saved at epoch 10 with val_loss: 0.5632
-Training Progress:  90%|█████████ | 9/10 [11:56<01:11, 71.58s/it, Epoch=10, Train=0.5144, Val=0.5632, Best=0.5632]2026-01-29 17:50:48 | INFO | Epoch 010/10 | Train: 0.5144 | Val: 0.5632 | Best Val: 0.5632 | RMSE: 4.0130 | SCC: 0.6187 | PCC: 0.6655
-Training Progress: 100%|██████████| 10/10 [11:56<00:00, 71.64s/it, Epoch=10, Train=0.5144, Val=0.5632, Best=0.5632]Training Progress: 100%|██████████| 10/10 [11:56<00:00, 71.66s/it, Epoch=10, Train=0.5144, Val=0.5632, Best=0.5632]
-2026-01-29 17:50:48 | INFO | ================================================================================
-2026-01-29 17:50:48 | INFO | Training Complete
-2026-01-29 17:50:48 | INFO | ================================================================================
-2026-01-29 17:50:48 | INFO | Final train loss: 0.5144
-2026-01-29 17:50:48 | INFO | Final validation loss: 0.5632
-2026-01-29 17:50:48 | INFO | Best validation loss: 0.5632
-2026-01-29 17:50:48 | INFO | Best validation loss (original scale): 16.1335
-2026-01-29 17:50:48 | INFO | 
-Best validation metrics (RMSE, SCC, PCC)
-+--------+-----------------+
-| Metric |      Value      |
-+--------+-----------------+
-|  RMSE  | 4.0130 (0.0297) |
-|  SCC   | 0.6187 (0.0039) |
-|  PCC   | 0.6655 (0.0048) |
-+--------+-----------------+
-
-2026-01-29 17:50:48 | INFO | Metrics saved to /home/debnathk/drug-synergy/logs/kan_std_random_20260129_173850/metrics.json
-2026-01-29 17:50:48 | INFO | Saving trained OmicsFusionModel weights...
-2026-01-29 17:50:48 | INFO | OmicsFusionModel weights saved to /home/debnathk/drug-synergy/logs/kan_std_random_20260129_173850/omics_encoder.pt
-2026-01-29 17:50:48 | INFO | OmicsFusionModel weights also saved to /home/debnathk/drug-synergy/data/models/omics_fusion_model_best.pt
-2026-01-29 17:50:48 | INFO | Generating loss plot...
-2026-01-29 17:50:48 | INFO | Loss plot saved to /home/debnathk/drug-synergy/logs/kan_std_random_20260129_173850/loss_plot_std.png
-2026-01-29 17:50:49 | INFO | Loss plot also saved to /home/debnathk/drug-synergy/assets/loss_plot_std.png
-2026-01-29 17:50:49 | INFO | ================================================================================
-2026-01-29 17:50:49 | INFO | All outputs saved to: /home/debnathk/drug-synergy/logs/kan_std_random_20260129_173850
-2026-01-29 17:50:49 | INFO | ================================================================================

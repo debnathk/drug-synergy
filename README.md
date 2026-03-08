@@ -1,4 +1,4 @@
-# Drug Synergy Prediction
+# SynergyLM
 
 End-to-end deep learning pipeline for predicting drug combination synergy scores using drug molecular structure (SMILES) and multi-omics cell-line features (mRNA, miRNA, proteomics) from the DrugComb dataset (via TDC).
 

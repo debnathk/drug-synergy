@@ -26,6 +26,17 @@ from torch.utils.data import Dataset
 from src.dataset import DrugSynergyRawOmicsDataset
 from src.models.synergy_model import SynergyModel
 
+# Global font settings for publication-quality figures (2.5x scale)
+plt.rcParams.update({
+    'font.size': 35,
+    'axes.titlesize': 45,
+    'axes.labelsize': 40,
+    'xtick.labelsize': 35,
+    'ytick.labelsize': 35,
+    'legend.fontsize': 35,
+    'figure.titlesize': 50,
+})
+
 ROOT = Path(__file__).resolve().parent
 RAW_DATA_PATH = ROOT / "data/raw"
 EMBEDDINGS_PATH = ROOT / "data/embeddings"
@@ -249,22 +260,24 @@ def plot_full_attention_matrix(attention_weights, output_path):
     """
     avg_attn = attention_weights.mean(axis=(0, 1))  # [4, 4]
 
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(14, 12))
     sns.heatmap(
         avg_attn,
         xticklabels=FULL_LABELS,
         yticklabels=FULL_LABELS,
         annot=True,
         fmt='.3f',
+        annot_kws={'size': 40, 'weight': 'bold'},
         cmap='Blues',
         vmin=0,
         vmax=avg_attn.max(),
         square=True,
         cbar_kws={'label': 'Attention Weight'}
     )
-    # plt.title('Omics Self-Attention (Average across samples and heads)')
-    plt.xlabel('Key')
-    plt.ylabel('Query')
+    plt.xlabel('Key', fontsize=45)
+    plt.ylabel('Query', fontsize=45)
+    plt.xticks(fontsize=40)
+    plt.yticks(fontsize=40)
     plt.tight_layout()
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()
@@ -288,9 +301,10 @@ def plot_cls_to_modality_attention(attention_weights, output_path):
     avg_attn = cls_to_modality.mean(axis=(0, 1))  # [3]
     std_attn = cls_to_modality.mean(axis=1).std(axis=0)  # std across samples
 
-    plt.figure(figsize=(8, 5))
+    plt.figure(figsize=(14, 10))
     colors = sns.color_palette("Blues_d", 3)
-    bars = plt.bar(MODALITY_LABELS, avg_attn, yerr=std_attn, capsize=5, color=colors)
+    bars = plt.bar(MODALITY_LABELS, avg_attn, yerr=std_attn, capsize=12, color=colors,
+                   error_kw={'linewidth': 3})
 
     for bar, val in zip(bars, avg_attn):
         plt.text(
@@ -299,13 +313,14 @@ def plot_cls_to_modality_attention(attention_weights, output_path):
             f'{val:.3f}',
             ha='center',
             va='bottom',
-            fontsize=12,
+            fontsize=45,
             fontweight='bold'
         )
 
-    # plt.title('CLS Token Attention to Omics Modalities\n(How much the model attends to each omics type)')
-    plt.ylabel('Attention Weight')
-    plt.ylim(0, min(1.0, avg_attn.max() + std_attn.max() + 0.1))
+    plt.ylabel('Attention Weight', fontsize=45)
+    plt.xticks(fontsize=40)
+    plt.yticks(fontsize=35)
+    plt.ylim(0, min(1.0, avg_attn.max() + std_attn.max() + 0.15))
     plt.tight_layout()
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()
@@ -326,7 +341,7 @@ def plot_attention_per_head(attention_weights, output_path):
     cols = min(4, num_heads)
     rows = (num_heads + cols - 1) // cols
 
-    fig, axes = plt.subplots(rows, cols, figsize=(4 * cols, 4 * rows))
+    fig, axes = plt.subplots(rows, cols, figsize=(7 * cols, 7 * rows))
     if num_heads == 1:
         axes = np.array([axes])
     axes = axes.flatten()
@@ -339,6 +354,7 @@ def plot_attention_per_head(attention_weights, output_path):
             yticklabels=FULL_LABELS,
             annot=True,
             fmt='.2f',
+            annot_kws={'size': 35, 'weight': 'bold'},
             cmap='Blues',
             vmin=0,
             vmax=avg_attn[head_idx].max(),
@@ -346,14 +362,14 @@ def plot_attention_per_head(attention_weights, output_path):
             ax=ax,
             cbar=False
         )
-        ax.set_title(f'Head {head_idx + 1}')
-        ax.set_xlabel('Key')
-        ax.set_ylabel('Query')
+        ax.set_title(f'Head {head_idx + 1}', fontsize=45, fontweight='bold')
+        ax.set_xlabel('Key', fontsize=35)
+        ax.set_ylabel('Query', fontsize=35)
+        ax.tick_params(labelsize=30)
 
     for idx in range(num_heads, len(axes)):
         axes[idx].set_visible(False)
 
-    # plt.suptitle('Omics Self-Attention Per Head', fontsize=14, y=1.02)
     plt.tight_layout()
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()
@@ -375,18 +391,18 @@ def plot_cls_attention_per_head(attention_weights, output_path):
     x = np.arange(len(MODALITY_LABELS))
     width = 0.8 / num_heads
 
-    fig, ax = plt.subplots(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=(16, 10))
     colors = sns.color_palette("husl", num_heads)
 
     for i in range(num_heads):
         offset = (i - num_heads / 2 + 0.5) * width
         ax.bar(x + offset, avg_per_head[i], width, label=f'Head {i + 1}', color=colors[i])
 
-    ax.set_ylabel('Attention Weight')
-    # ax.set_title('CLS Attention to Modalities by Head')
+    ax.set_ylabel('Attention Weight', fontsize=45)
     ax.set_xticks(x)
-    ax.set_xticklabels(MODALITY_LABELS)
-    ax.legend(title='Attention Head')
+    ax.set_xticklabels(MODALITY_LABELS, fontsize=40)
+    ax.tick_params(axis='y', labelsize=35)
+    ax.legend(title='Attention Head', fontsize=35, title_fontsize=35)
     ax.set_ylim(0, min(1.0, avg_per_head.max() + 0.1))
 
     plt.tight_layout()
@@ -408,22 +424,24 @@ def plot_modality_attention_only(attention_weights, output_path):
     mod_to_mod = attention_weights[:, :, 1:4, 1:4]  # [N, num_heads, 3, 3]
     avg_attn = mod_to_mod.mean(axis=(0, 1))  # [3, 3]
 
-    plt.figure(figsize=(7, 5))
+    plt.figure(figsize=(12, 10))
     sns.heatmap(
         avg_attn,
         xticklabels=MODALITY_LABELS,
         yticklabels=MODALITY_LABELS,
         annot=True,
         fmt='.3f',
+        annot_kws={'size': 40, 'weight': 'bold'},
         cmap='Greens',
         vmin=0,
         vmax=avg_attn.max(),
         square=True,
         cbar_kws={'label': 'Attention Weight'}
     )
-    # plt.title('Modality-to-Modality Attention\n(How omics modalities attend to each other)')
-    plt.xlabel('Key')
-    plt.ylabel('Query')
+    plt.xlabel('Key', fontsize=45)
+    plt.ylabel('Query', fontsize=45)
+    plt.xticks(fontsize=40)
+    plt.yticks(fontsize=40)
     plt.tight_layout()
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()
@@ -453,20 +471,22 @@ def plot_attention_by_synergy(attention_data, output_dir):
     x = np.arange(len(MODALITY_LABELS))
     width = 0.35
 
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+    fig, axes = plt.subplots(1, 2, figsize=(24, 10))
 
     # Bar chart comparison
     ax1 = axes[0]
-    ax1.bar(x - width / 2, high_attn, width, yerr=high_std, capsize=4,
-            label=f'High Synergy (>{median_synergy:.1f})', color='#e74c3c', alpha=0.8)
-    ax1.bar(x + width / 2, low_attn, width, yerr=low_std, capsize=4,
-            label=f'Low Synergy (≤{median_synergy:.1f})', color='#3498db', alpha=0.8)
+    ax1.bar(x - width / 2, high_attn, width, yerr=high_std, capsize=10,
+            label=f'High Synergy (>{median_synergy:.1f})', color='#e74c3c', alpha=0.8,
+            error_kw={'linewidth': 3})
+    ax1.bar(x + width / 2, low_attn, width, yerr=low_std, capsize=10,
+            label=f'Low Synergy (≤{median_synergy:.1f})', color='#3498db', alpha=0.8,
+            error_kw={'linewidth': 3})
 
-    ax1.set_ylabel('CLS Attention Weight')
-    # ax1.set_title('CLS Attention to Modalities by Synergy Level')
+    ax1.set_ylabel('CLS Attention Weight', fontsize=45)
     ax1.set_xticks(x)
-    ax1.set_xticklabels(MODALITY_LABELS)
-    ax1.legend()
+    ax1.set_xticklabels(MODALITY_LABELS, fontsize=40)
+    ax1.tick_params(axis='y', labelsize=35)
+    ax1.legend(fontsize=30)
     ax1.set_ylim(0, min(1.0, max(high_attn.max(), low_attn.max()) + 0.15))
 
     # Difference plot
@@ -474,16 +494,16 @@ def plot_attention_by_synergy(attention_data, output_dir):
     diff = high_attn - low_attn
     colors = ['#e74c3c' if d > 0 else '#3498db' for d in diff]
     ax2.bar(MODALITY_LABELS, diff, color=colors)
-    ax2.axhline(y=0, color='black', linestyle='-', linewidth=0.5)
-    ax2.set_ylabel('Attention Difference (High - Low)')
-    ax2.set_title('Attention Shift: High vs Low Synergy')
+    ax2.axhline(y=0, color='black', linestyle='-', linewidth=2)
+    ax2.set_ylabel('Attention Difference (High - Low)', fontsize=45)
+    ax2.set_title('Attention Shift: High vs Low Synergy', fontsize=45, fontweight='bold')
+    ax2.tick_params(axis='x', labelsize=40)
+    ax2.tick_params(axis='y', labelsize=35)
 
     for i, (label, d) in enumerate(zip(MODALITY_LABELS, diff)):
         ax2.text(i, d + 0.005 if d > 0 else d - 0.015,
-                 f'{d:+.3f}', ha='center', fontsize=10)
+                 f'{d:+.3f}', ha='center', fontsize=40, fontweight='bold')
 
-    # plt.suptitle(f'Omics Attention by Synergy Level (median threshold: {median_synergy:.2f})',
-                #  fontsize=12, y=1.02)
     plt.tight_layout()
     plt.savefig(output_dir / 'attention_by_synergy.png', dpi=300, bbox_inches='tight')
     plt.close()

@@ -3,6 +3,8 @@ Description: Split synergy dataset into train, val and test and save splits as p
 Outcome: Train-val-test data as .pkl
 """
 
+import numpy as np
+import pandas as pd
 import torch
 from torch.utils.data import Dataset
 from tdc.multi_pred import DrugSyn
@@ -87,6 +89,60 @@ class DrugSynergyRawOmicsDataset(Dataset):
         y = torch.tensor([row[self.target_col]], dtype=torch.float32)
 
         return d1, d2, mrna, mirna, prot, y
+
+
+class DrugSynergyL1000Dataset(Dataset):
+    """
+    Dataset for training with mRNA + per-drug L1000 perturbation profiles.
+
+    Returns (drug1_emb, drug2_emb, mrna, l1000_d1, l1000_d2, y).
+    """
+
+    def __init__(self, df, drug_emb_path, l1000_path, target_col):
+        self.df = df.reset_index(drop=True)
+        self.drug_emb = torch.load(drug_emb_path)
+        self.target_col = target_col
+
+        # mRNA dimension from first sample
+        first_cell_line = self.df.iloc[0]['CellLine']
+        self.mrna_dim = len(first_cell_line[0])
+
+        # Load L1000 representative profiles and build SMILES -> tensor lookup
+        l1000_df = pd.read_csv(l1000_path)
+        gene_cols = [c for c in l1000_df.columns if c not in ("Drug_ID", "Drug")]
+        self.l1000_dim = len(gene_cols)
+        gene_values = l1000_df[gene_cols].values.astype(np.float32)
+
+        self._l1000_lookup: dict[str, torch.Tensor] = {}
+        for i, smiles in enumerate(l1000_df["Drug"]):
+            self._l1000_lookup[smiles] = torch.from_numpy(gene_values[i])
+
+        self._l1000_zero = torch.zeros(self.l1000_dim, dtype=torch.float32)
+
+    def __len__(self):
+        return len(self.df)
+
+    def get_dims(self):
+        """Returns (mrna_dim, l1000_dim)."""
+        return self.mrna_dim, self.l1000_dim
+
+    def _get_l1000(self, smiles: str) -> torch.Tensor:
+        return self._l1000_lookup.get(smiles, self._l1000_zero)
+
+    def __getitem__(self, idx):
+        row = self.df.iloc[idx]
+
+        d1 = self.drug_emb["embeddings"][row['Drug1']]
+        d2 = self.drug_emb["embeddings"][row['Drug2']]
+
+        mrna = torch.tensor(row['CellLine'][0], dtype=torch.float32)
+
+        l1000_d1 = self._get_l1000(row['Drug1'])
+        l1000_d2 = self._get_l1000(row['Drug2'])
+
+        y = torch.tensor([row[self.target_col]], dtype=torch.float32)
+
+        return d1, d2, mrna, l1000_d1, l1000_d2, y
 
 
 def split_train_val_test(split_type="random"):

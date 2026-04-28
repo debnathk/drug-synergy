@@ -4,6 +4,7 @@ test
 docs
 assets/
 logs/
+/meta-analysis/
 run_main.sh
 *.csv
 *.txt

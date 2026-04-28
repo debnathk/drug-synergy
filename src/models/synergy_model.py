@@ -1,7 +1,10 @@
 """
-Description: End-to-end synergy prediction model with trainable omics encoder
-             and attention-based fusion of drug and omics embeddings.
-             Supports both MLP and KAN prediction heads.
+Description: End-to-end synergy prediction models for drug synergy prediction.
+
+SynergyModel    -- original model with attention-based fusion of mRNA, miRNA,
+                   and proteomics alongside frozen drug embeddings.
+SynergyModelL1000 -- L1000-augmented variant that uses mRNA + per-drug LINCS
+                     L1000 perturbation profiles (drops miRNA & proteomics).
 """
 
 import torch
@@ -222,3 +225,59 @@ class SynergyModel(nn.Module):
             return output, attention_weights
         
         return output
+
+
+class SynergyModelL1000(nn.Module):
+    """
+    L1000-augmented synergy prediction model.
+
+    Replaces the multi-omics attention fusion with a simpler architecture:
+      - mRNA features encoded via a trainable OmicsEncoder
+      - Per-drug L1000 perturbation profiles encoded via a shared OmicsEncoder
+      - Frozen drug LM embeddings (MolFormer / ChemBERTa)
+
+    Forward concatenation:
+        [drug1_emb, drug2_emb, mRNA_enc, L1000_d1_enc, L1000_d2_enc]
+        = 5 * embed_dim  ->  MLP or KAN head  ->  synergy score
+    """
+
+    def __init__(self, mrna_dim, l1000_dim, embed_dim=768,
+                 head_type="mlp", grid_size=5):
+        super().__init__()
+        self.head_type = head_type
+
+        self.mrna_encoder = OmicsEncoder(mrna_dim, out_dim=embed_dim)
+        self.l1000_encoder = OmicsEncoder(l1000_dim, out_dim=embed_dim)
+
+        input_dim = embed_dim * 5
+
+        if head_type == "mlp":
+            self.head = SynergyMLP(input_dim=input_dim, output_dim=1)
+        elif head_type == "kan":
+            self.head = SynergyKAN(input_dim=input_dim, output_dim=1,
+                                   grid_size=grid_size)
+        else:
+            raise ValueError(
+                f"Unknown head_type: {head_type}. Must be 'mlp' or 'kan'")
+
+    def forward(self, drug1_emb, drug2_emb, mrna, l1000_d1, l1000_d2):
+        """
+        Args:
+            drug1_emb: [batch, embed_dim] frozen drug embedding
+            drug2_emb: [batch, embed_dim] frozen drug embedding
+            mrna:      [batch, mrna_dim]  raw mRNA expression
+            l1000_d1:  [batch, l1000_dim] L1000 profile for drug 1
+            l1000_d2:  [batch, l1000_dim] L1000 profile for drug 2
+        Returns:
+            Synergy prediction of shape [batch, 1]
+        """
+        mrna_enc = self.mrna_encoder(mrna)          # [batch, embed_dim]
+        l1000_d1_enc = self.l1000_encoder(l1000_d1) # [batch, embed_dim]
+        l1000_d2_enc = self.l1000_encoder(l1000_d2) # [batch, embed_dim]
+
+        fused = torch.cat(
+            [drug1_emb, drug2_emb, mrna_enc, l1000_d1_enc, l1000_d2_enc],
+            dim=1,
+        )  # [batch, 5*embed_dim]
+
+        return self.head(fused)

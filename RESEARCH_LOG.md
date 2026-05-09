@@ -148,8 +148,49 @@ python main.py --head_type kan --standardize
 
 ---
 
+### 6. Configurable Multi-Omics Fusion Strategies
+
+**Files modified:** `src/models/synergy_model.py`, `main.py`, `ablation.py`
+
+Added support for multiple fusion strategies in the original `SynergyModel` (mRNA + miRNA + proteomics fusion). Previously, only self-attention with a learnable CLS token was available. Now five strategies can be selected via the `--fusion_type` CLI argument:
+
+| Strategy | Operation | Output Dim | Description |
+|----------|-----------|------------|-------------|
+| `attention` | CLS + MultiheadAttention | 768 | Learnable cross-modal attention weights (default, original behavior) |
+| `concat` | Concatenate along feature dim | 2304 | Simple baseline preserving all modality information |
+| `product` | Element-wise product | 768 | Captures multiplicative interactions between modalities |
+| `mean_pool` | Mean across modalities | 768 | Simple average with equal weighting |
+| `max_pool` | Max across modalities | 768 | Selects strongest features per dimension |
+
+**Implementation:**
+
+Added three new fusion modules (`OmicsConcatFusion`, `OmicsProductFusion`, `OmicsPoolingFusion`) and updated `OmicsFusionModel` with a `fusion_type` parameter that selects the fusion module and sets `fused_dim`. The `SynergyModel` now computes the prediction head input dimension dynamically based on `fused_dim`.
+
+**CLI usage:**
+
+```bash
+# Default attention fusion
+python main.py --head_type kan --standardize
+
+# Concatenation fusion (larger head input: 3840)
+python main.py --fusion_type concat --head_type kan --standardize
+
+# Element-wise product fusion
+python main.py --fusion_type product --head_type kan --standardize
+
+# Mean pooling fusion
+python main.py --fusion_type mean_pool --head_type kan --standardize
+
+# Ablation study with specific fusion
+python ablation.py --fusion_type concat --epochs 100
+```
+
+**Backward compatibility:** Default `fusion_type="attention"` preserves original model behavior. The L1000-augmented model (`SynergyModelL1000`) is unaffected as it uses direct concatenation without multi-omics fusion.
+
+---
+
 ### Next Steps
 
 - Evaluate impact of L1000 features on synergy prediction performance (compare L1000-augmented vs. original model).
 - Assess sensitivity of synergy predictions to proxy-matched drugs (match_type = "proxy") versus directly matched drugs.
-- Experiment with alternative fusion strategies (e.g., attention-based fusion of mRNA and L1000 tokens).
+- Compare fusion strategies (attention vs. concat vs. product vs. pooling) on synergy prediction metrics.

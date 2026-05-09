@@ -72,6 +72,87 @@ class OmicsAttentionFusion(nn.Module):
         return fused
 
 
+class OmicsConcatFusion(nn.Module):
+    """Concatenates modality embeddings along the feature dimension.
+    
+    Output dimension = num_modalities * emb_dim (e.g., 3 * 768 = 2304).
+    Simple baseline that preserves all information from each modality.
+    """
+    def __init__(self, emb_dim=768, num_modalities=3):
+        super().__init__()
+        self.emb_dim = emb_dim
+        self.num_modalities = num_modalities
+    
+    def forward(self, embeddings, return_attention=False):
+        """
+        Args:
+            embeddings: Tensor of shape [batch, num_modalities, emb_dim]
+            return_attention: Ignored (no attention weights for concat)
+        Returns:
+            Concatenated embedding of shape [batch, num_modalities * emb_dim]
+        """
+        fused = embeddings.view(embeddings.size(0), -1)
+        if return_attention:
+            return fused, None
+        return fused
+
+
+class OmicsProductFusion(nn.Module):
+    """Element-wise product (Hadamard product) across modalities.
+    
+    Output dimension = emb_dim. Captures multiplicative interactions
+    between modalities - a feature must be active in all modalities
+    to contribute strongly to the output.
+    """
+    def __init__(self, emb_dim=768):
+        super().__init__()
+        self.emb_dim = emb_dim
+    
+    def forward(self, embeddings, return_attention=False):
+        """
+        Args:
+            embeddings: Tensor of shape [batch, num_modalities, emb_dim]
+            return_attention: Ignored (no attention weights for product)
+        Returns:
+            Element-wise product of shape [batch, emb_dim]
+        """
+        fused = embeddings.prod(dim=1)
+        if return_attention:
+            return fused, None
+        return fused
+
+
+class OmicsPoolingFusion(nn.Module):
+    """Mean or max pooling across modalities.
+    
+    Output dimension = emb_dim. Simple aggregation that treats all
+    modalities equally (mean) or selects the strongest signal (max).
+    """
+    def __init__(self, emb_dim=768, pool_type="mean"):
+        super().__init__()
+        self.emb_dim = emb_dim
+        if pool_type not in ("mean", "max"):
+            raise ValueError(f"pool_type must be 'mean' or 'max', got {pool_type!r}")
+        self.pool_type = pool_type
+    
+    def forward(self, embeddings, return_attention=False):
+        """
+        Args:
+            embeddings: Tensor of shape [batch, num_modalities, emb_dim]
+            return_attention: Ignored (no attention weights for pooling)
+        Returns:
+            Pooled embedding of shape [batch, emb_dim]
+        """
+        if self.pool_type == "mean":
+            fused = embeddings.mean(dim=1)
+        else:
+            fused = embeddings.max(dim=1)[0]
+        
+        if return_attention:
+            return fused, None
+        return fused
+
+
 # class ProjectionAttention(nn.Module): # **Attention is overkill here
 #     """Projects embedding to higher dimension using attention mechanism."""
 #     def __init__(self, in_dim=256, out_dim=768):
@@ -101,6 +182,9 @@ class OmicsAttentionFusion(nn.Module):
 #         return out.squeeze(1)  # [batch, out_dim]
 
 
+VALID_FUSION_TYPES = ("attention", "concat", "product", "mean_pool", "max_pool")
+
+
 class OmicsFusionModel(nn.Module):
     """
     Fuses mRNA, miRNA, and proteomics data into a single embedding.
@@ -111,16 +195,45 @@ class OmicsFusionModel(nn.Module):
         mirna_dim: Input dimension for miRNA features
         prot_dim: Input dimension for proteomics features
         out_dim: Output embedding dimension (must match drug embedding dim)
+        fusion_type: Fusion strategy to use. One of:
+            - "attention": Self-attention with learnable CLS token (default)
+            - "concat": Concatenate modalities (output dim = 3 * out_dim)
+            - "product": Element-wise product across modalities
+            - "mean_pool": Mean pooling across modalities
+            - "max_pool": Max pooling across modalities
     """
-    def __init__(self, mrna_dim, mirna_dim, prot_dim, out_dim=768):
+    def __init__(self, mrna_dim, mirna_dim, prot_dim, out_dim=768, fusion_type="attention"):
         super().__init__()
+        
+        if fusion_type not in VALID_FUSION_TYPES:
+            raise ValueError(
+                f"fusion_type must be one of {VALID_FUSION_TYPES}, got {fusion_type!r}"
+            )
+        
+        self.fusion_type = fusion_type
+        self.out_dim = out_dim
+        
         self.mrna_encoder = OmicsEncoder(mrna_dim, out_dim=out_dim)
         self.mirna_encoder = OmicsEncoder(mirna_dim, out_dim=out_dim)
         self.prot_encoder = OmicsEncoder(prot_dim, out_dim=out_dim)
 
-        self.fusion = OmicsAttentionFusion(emb_dim=out_dim)
-        # self.project = ProjectionAttention(256, out_dim)
-        # self.project = nn.Linear(256, out_dim)
+        # Initialize fusion module and set output dimension
+        num_modalities = 3
+        if fusion_type == "attention":
+            self.fusion = OmicsAttentionFusion(emb_dim=out_dim)
+            self.fused_dim = out_dim
+        elif fusion_type == "concat":
+            self.fusion = OmicsConcatFusion(emb_dim=out_dim, num_modalities=num_modalities)
+            self.fused_dim = out_dim * num_modalities
+        elif fusion_type == "product":
+            self.fusion = OmicsProductFusion(emb_dim=out_dim)
+            self.fused_dim = out_dim
+        elif fusion_type == "mean_pool":
+            self.fusion = OmicsPoolingFusion(emb_dim=out_dim, pool_type="mean")
+            self.fused_dim = out_dim
+        elif fusion_type == "max_pool":
+            self.fusion = OmicsPoolingFusion(emb_dim=out_dim, pool_type="max")
+            self.fused_dim = out_dim
 
     def forward(self, mrna, mirna, prot, return_attention=False):
         """
@@ -129,10 +242,13 @@ class OmicsFusionModel(nn.Module):
             mirna: Tensor of shape [batch, mirna_dim]
             prot: Tensor of shape [batch, prot_dim]
             return_attention: If True, also return omics fusion attention weights
+                (only meaningful for fusion_type="attention")
         Returns:
-            Fused omics embedding of shape [batch, out_dim]
-            If return_attention: also returns attention weights [batch, num_heads, 4, 4]
-                Attention matrix indices: 0=CLS, 1=mRNA, 2=miRNA, 3=Proteomics
+            Fused omics embedding of shape [batch, fused_dim]
+            If return_attention: also returns attention weights or None
+                For attention fusion: [batch, num_heads, 4, 4]
+                    Attention matrix indices: 0=CLS, 1=mRNA, 2=miRNA, 3=Proteomics
+                For other fusion types: None
         """
         e1 = self.mrna_encoder(mrna)   # [batch, out_dim]
         e2 = self.mirna_encoder(mirna)  # [batch, out_dim]
@@ -141,15 +257,10 @@ class OmicsFusionModel(nn.Module):
         stacked = torch.stack([e1, e2, e3], dim=1)  # [batch, 3, out_dim]
         
         if return_attention:
-            fused_768, omics_attn = self.fusion(stacked, return_attention=True)
-        else:
-            fused_768 = self.fusion(stacked)
-            
-        # fused_768 = self.project(fused_256)  # [batch, 768]
-
-        if return_attention:
-            return fused_768, omics_attn
-        return fused_768
+            fused, omics_attn = self.fusion(stacked, return_attention=True)
+            return fused, omics_attn
+        
+        return self.fusion(stacked)
 
 
 
@@ -161,8 +272,10 @@ class SynergyModel(nn.Module):
     fuses them via concatenation, and predicts synergy score.
     
     Supports both MLP and KAN prediction heads using SynergyMLP and SynergyKAN.
+    Supports multiple omics fusion strategies via fusion_type parameter.
     """
-    def __init__(self, mrna_dim, mirna_dim, prot_dim, embed_dim=768, head_type="mlp", grid_size=5):
+    def __init__(self, mrna_dim, mirna_dim, prot_dim, embed_dim=768, head_type="mlp", 
+                 grid_size=5, fusion_type="attention"):
         """
         Args:
             mrna_dim: Dimension of mRNA features
@@ -171,22 +284,32 @@ class SynergyModel(nn.Module):
             embed_dim: Embedding dimension (default 768)
             head_type: Type of prediction head - "mlp" or "kan" (default "mlp")
             grid_size: Grid size for KAN layers (only used if head_type="kan")
+            fusion_type: Omics fusion strategy. One of:
+                - "attention": Self-attention with learnable CLS token (default)
+                - "concat": Concatenate modalities
+                - "product": Element-wise product across modalities
+                - "mean_pool": Mean pooling across modalities
+                - "max_pool": Max pooling across modalities
         """
         super().__init__()
         
         self.head_type = head_type
+        self.fusion_type = fusion_type
 
-        # Trainable omics encoder: raw omics -> embed_dim embedding
-        self.omics_encoder = OmicsFusionModel(mrna_dim, mirna_dim, prot_dim, out_dim=embed_dim)
+        # Trainable omics encoder: raw omics -> fused_dim embedding
+        self.omics_encoder = OmicsFusionModel(
+            mrna_dim, mirna_dim, prot_dim, 
+            out_dim=embed_dim, 
+            fusion_type=fusion_type
+        )
 
-        # Prediction head - takes concatenated [drug1, drug2, omics] = 3 * embed_dim
-        input_dim = embed_dim * 3
+        # Prediction head input: [drug1 | drug2 | fused_omics]
+        # Drug embeddings are embed_dim each, fused_omics depends on fusion strategy
+        input_dim = embed_dim * 2 + self.omics_encoder.fused_dim
         
         if head_type == "mlp":
-            # Use ready-made SynergyMLP: 2304 -> 1024 -> 256 -> 1
             self.head = SynergyMLP(input_dim=input_dim, output_dim=1)
         elif head_type == "kan":
-            # Use ready-made SynergyKAN: 2304 -> 128 -> 32 -> 1
             self.head = SynergyKAN(input_dim=input_dim, output_dim=1, grid_size=grid_size)
         else:
             raise ValueError(f"Unknown head_type: {head_type}. Must be 'mlp' or 'kan'")
@@ -199,12 +322,14 @@ class SynergyModel(nn.Module):
             mrna: Tensor of shape [batch, mrna_dim] - raw mRNA features
             mirna: Tensor of shape [batch, mirna_dim] - raw miRNA features
             prot: Tensor of shape [batch, prot_dim] - raw proteomics features
-            return_attention: If True, also return attention weights (only omics fusion)
+            return_attention: If True, also return attention weights 
+                (only meaningful for fusion_type="attention")
         Returns:
             Synergy prediction of shape [batch, 1]
             If return_attention: also returns dict with attention weights:
-                - 'omics_fusion': [batch, num_heads, 4, 4] - Omics modality attention
+                - 'omics_fusion': [batch, num_heads, 4, 4] for attention fusion
                     (indices: 0=CLS, 1=mRNA, 2=miRNA, 3=Proteomics)
+                - 'omics_fusion': None for other fusion types
         """
         # Encode raw omics to embedding
         if return_attention:
@@ -213,14 +338,14 @@ class SynergyModel(nn.Module):
             omics_emb = self.omics_encoder(mrna, mirna, prot)
 
         # Concatenate drug and omics embeddings
-        fused = torch.cat([drug1_emb, drug2_emb, omics_emb], dim=1)  # [batch, 3*embed_dim]
+        fused = torch.cat([drug1_emb, drug2_emb, omics_emb], dim=1)
 
         # Predict synergy score using the selected head (MLP or KAN)
         output = self.head(fused)
         
         if return_attention:
             attention_weights = {
-                'omics_fusion': omics_attn  # [batch, num_heads, 4, 4] - CLS, mRNA, miRNA, Proteomics
+                'omics_fusion': omics_attn
             }
             return output, attention_weights
         

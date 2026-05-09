@@ -431,8 +431,9 @@ def run_condition(condition: str, base_train_dataset, base_val_dataset,
         "train_samples": len(train_dataset),
         "val_samples": len(val_dataset),
         "test_samples": len(test_dataset),
-        "model": f"SynergyModel ({args.head_type.upper()} Head)",
+        "model": f"SynergyModel ({args.head_type.upper()} Head, {args.fusion_type} fusion)",
         "head_type": args.head_type,
+        "fusion_type": args.fusion_type,
         "grid_size": args.grid_size if args.head_type == "kan" else None,
         "drug_emb_dim": args.drug_emb_dim,
         "drug_model": args.drug_model,
@@ -466,6 +467,7 @@ def run_condition(condition: str, base_train_dataset, base_val_dataset,
         embed_dim=args.drug_emb_dim,
         head_type=args.head_type,
         grid_size=args.grid_size,
+        fusion_type=args.fusion_type,
     ).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
     criterion = nn.MSELoss()
@@ -644,6 +646,7 @@ def save_summary(results: dict, args):
         "target": args.target,
         "split_type": args.split_type,
         "head_type": args.head_type,
+        "fusion_type": args.fusion_type,
         "epochs": args.epochs,
         "standardize": args.standardize,
         "metric_source": "test_set",
@@ -698,6 +701,11 @@ def parse_args():
     parser.add_argument(
         "--head_type", type=str, default="kan", choices=["mlp", "kan"],
         help="Prediction head: mlp or kan (default: kan)",
+    )
+    parser.add_argument(
+        "--fusion_type", type=str, default="attention",
+        choices=["attention", "concat", "product", "mean_pool", "max_pool"],
+        help="Omics fusion strategy (default: attention)",
     )
     parser.add_argument("--grid_size", type=int, default=5,
                         help="Grid size for KAN layers (default: 5)")

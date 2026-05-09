@@ -426,6 +426,9 @@ def parse_args():
     parser.add_argument('--head_type', type=str, default='mlp',
                         choices=['mlp', 'kan'],
                         help='Prediction head type: mlp or kan (default: mlp)')
+    parser.add_argument('--fusion_type', type=str, default='attention',
+                        choices=['attention', 'concat', 'product', 'mean_pool', 'max_pool'],
+                        help='Omics fusion strategy (default: attention)')
     parser.add_argument('--grid_size', type=int, default=5,
                         help='Grid size for KAN layers (only used if head_type=kan)')
     parser.add_argument('--split_type', type=str, default='random',
@@ -457,7 +460,8 @@ if __name__ == "__main__":
         head_suffix = "kan" if args.head_type == "kan" else "mlp"
         std_suffix = "_std" if args.standardize else ""
         l1000_suffix = "_l1000" if use_l1000 else ""
-        exp_name = f"synergy_{head_suffix}{std_suffix}{l1000_suffix}_{args.split_type}"
+        fusion_suffix = f"_{args.fusion_type}" if args.fusion_type != "attention" else ""
+        exp_name = f"synergy_{head_suffix}{std_suffix}{fusion_suffix}{l1000_suffix}_{args.split_type}"
 
     # Setup logging
     run_dir, logger = setup_logging(experiment_name=exp_name)
@@ -467,7 +471,8 @@ if __name__ == "__main__":
 
     logger.info("=" * 80)
     mode_label = "L1000-augmented" if use_l1000 else "Original"
-    logger.info(f"Starting Drug Synergy Prediction Training ({mode_label}, {args.head_type.upper()} Head)")
+    fusion_label = f", {args.fusion_type} fusion" if not use_l1000 else ""
+    logger.info(f"Starting Drug Synergy Prediction Training ({mode_label}, {args.head_type.upper()} Head{fusion_label})")
     logger.info("=" * 80)
 
     # Load data splits
@@ -555,6 +560,7 @@ if __name__ == "__main__":
             embed_dim=args.drug_emb_dim,
             head_type=args.head_type,
             grid_size=args.grid_size,
+            fusion_type=args.fusion_type,
         ).to(device)
 
         config = {
@@ -569,8 +575,9 @@ if __name__ == "__main__":
             "device": str(device),
             "train_samples": len(train_df),
             "val_samples": len(val_df),
-            "model": f"SynergyModel ({args.head_type.upper()} Head)",
+            "model": f"SynergyModel ({args.head_type.upper()} Head, {args.fusion_type} fusion)",
             "head_type": args.head_type,
+            "fusion_type": args.fusion_type,
             "grid_size": args.grid_size if args.head_type == "kan" else None,
             "drug_emb_dim": args.drug_emb_dim,
             "drug_model": args.drug_model,

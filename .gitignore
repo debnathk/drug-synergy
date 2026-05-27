@@ -15,3 +15,4 @@ run_main.sh
 *.pt
 *.pyc
 RESEARCH_LOG.md
+.gitignore

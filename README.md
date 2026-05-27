@@ -1,6 +1,7 @@
 # SynergyLM
 
-End-to-end deep learning pipeline for predicting drug combination synergy scores using drug molecular structure (SMILES) and multi-omics cell-line features (mRNA, miRNA, proteomics) from the DrugComb dataset (via TDC).
+Official code repository for the article titled "Attention-Based Multi-Omics Fusion for Drug Synergy
+Prediction", accepted as a full paper at ACM BCB 2026.
 
 ---
 

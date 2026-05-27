@@ -5,6 +5,8 @@ docs
 assets/
 logs/
 /meta-analysis/
+external/
+/inference/
 run_main.sh
 *.csv
 *.txt
@@ -12,3 +14,4 @@ run_main.sh
 *.DS_Store
 *.pt
 *.pyc
+RESEARCH_LOG.md

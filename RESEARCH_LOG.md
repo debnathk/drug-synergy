@@ -189,8 +189,157 @@ python ablation.py --fusion_type concat --epochs 100
 
 ---
 
+### 7. Inference Script for External Drug Combinations
+
+**Script:** `inference.py`
+
+Implemented an inference pipeline to predict synergy scores for external/experimental drug combinations using the trained `SynergyModelL1000` model. The script enables evaluation of novel drug combinations not present in the training data.
+
+**Features:**
+
+- Loads trained checkpoint and config (including target scaler parameters)
+- Generates MolFormer embeddings for novel drugs from SMILES files
+- Handles L1000 profile matching via Tanimoto similarity proxy when drugs are not directly profiled in L1000
+- Extracts cell line mRNA data for target cancer types
+- Supports all four synergy metrics: `Synergy_ZIP`, `Synergy_Bliss`, `Synergy_Loewe`, `Synergy_HSA`
+
+**CLI Arguments:**
+
+| Argument | Description |
+|----------|-------------|
+| `--checkpoint` | Path to model checkpoint |
+| `--target` | Synergy metric type |
+| `--approved_dir` | Directory with approved drug SMILES |
+| `--proprietary_dir` | Directory with proprietary drug SMILES |
+| `--l1000_path` | L1000 representative profiles CSV |
+| `--output` | Output CSV path |
+
+**Initial Results (Sebti Group Combinations):**
+
+Using `SynergyModelL1000` cold-drug checkpoint (Synergy_Bliss):
+
+| Drug1 | Drug2 | Cancer Type | Avg Synergy |
+|-------|-------|-------------|-------------|
+| FGTI-2734 | Sotorasib | Lung | +2.39 |
+| GGTI-2418 | Belinostat | T-Cell Lymphoma | -0.26 |
+| GGTI-2418 | Romidepsin | T-Cell Lymphoma | -3.18 |
+
+FGTI-2734 + Sotorasib shows positive synergy across lung cancer cell lines (highest in NCI-H322M: +4.79), consistent with published literature on KRAS inhibitor combinations.
+
+**Outputs:** `external/sebti-group/synergy_predictions.csv`
+
+---
+
+### 8. Extended Inference Script to Support Both Model Types
+
+**Date:** 2026-05-13
+
+**Implementation:**
+- Modified `inference.py` to support both the original `SynergyModel` (mRNA + miRNA + proteomics) and `SynergyModelL1000` (mRNA + L1000 profiles)
+- Added model type auto-detection based on `config.json` keys (presence of `l1000_dim` indicates L1000 model)
+- Added `embed_dim` inference from checkpoint state_dict for backward compatibility with older checkpoints
+- Updated cell line data extraction to return all three omics modalities for `SynergyModel`
+- L1000 profile loading is now skipped when using `SynergyModel`
+- Added inference commands for original `SynergyModel` to `run_main.sh`
+
+**Rationale:**
+- Enable comparison between multi-omics fusion (mRNA + miRNA + proteomics) and L1000-augmented approaches for external drug predictions
+- Allow inference with different checkpoint architectures without code modifications
+
+**Files modified:**
+- `inference.py` - Model type auto-detection, embed_dim inference, conditional omics extraction
+- `run_main.sh` - Added inference commands for original SynergyModel checkpoints
+
+**Observations:**
+- Original `SynergyModel` (multi-omics attention fusion) predictions for Sebti group combinations:
+
+| Drug1 | Drug2 | Cancer Type | ZIP Avg | Bliss Avg | HSA Avg | Loewe Avg |
+|-------|-------|-------------|---------|-----------|---------|-----------|
+| FGTI-2734 | Sotorasib | Lung | +1.20 | +1.14 | -1.42 | -4.56 |
+| GGTI-2418 | Belinostat | T-Cell Lymphoma | +1.19 | +1.65 | -2.87 | -10.59 |
+| GGTI-2418 | Romidepsin | T-Cell Lymphoma | +0.03 | -1.14 | -3.31 | -12.30 |
+
+- Different synergy metrics show varying predictions; ZIP and Bliss show positive synergy for FGTI-2734 combinations while HSA and Loewe show antagonism
+- GGTI-2418 + Belinostat shows strongest Bliss synergy (+4.38 in MOLT-4 cells)
+
+**Outputs:** 
+- `external/sebti-group/results/synergylm_zip_predictions.csv`
+- `external/sebti-group/results/synergylm_hsa_predictions.csv`
+- `external/sebti-group/results/synergylm_bliss_predictions.csv`
+- `external/sebti-group/results/synergylm_loewe_predictions.csv`
+
+---
+
+### 9. Comprehensive Inference Analysis: SynergyLM vs SynergyLM+L1000
+
+**Date:** 2026-05-19
+
+**Implementation:**
+- Created comprehensive analysis comparing predictions from both model architectures for Sebti group drug combinations
+- Analyzed synergy predictions across multiple metrics (ZIP, Bliss, HSA, Loewe) and cell lines
+- Evaluated L1000 proxy matching quality and its impact on predictions
+
+**Rationale:**
+- Understand model-specific prediction patterns for experimental prioritization
+- Identify reliable predictions versus those sensitive to modeling assumptions
+
+**Files modified:**
+- `external/sebti-group/results/analysis.md` - Comprehensive write-up
+
+**Key Findings:**
+
+1. **FGTI-2734 + Sotorasib**: Both models predict positive synergy (SynergyLM: +1.14, L1000: +2.39 Bliss avg). Strongest in NCI-H322M cells. Recommended for experimental validation.
+
+2. **GGTI-2418 + Belinostat**: Model divergence observed. SynergyLM predicts synergy (+1.65, strongest in MOLT-4: +4.38), while L1000 predicts slight antagonism (-0.26). Low L1000 proxy similarity (0.27) may explain discrepancy.
+
+3. **GGTI-2418 + Romidepsin**: Consistent antagonism across both models (-1.14 to -3.18). De-prioritized despite direct L1000 match for Romidepsin.
+
+4. **Metric-dependent predictions**: ZIP/Bliss generally positive, HSA/Loewe generally negative for same combinations.
+
+5. **L1000 proxy limitation**: Low Tanimoto similarity (<0.3) for most drugs suggests prediction uncertainty. Direct L1000 profiling recommended.
+
+**Outputs:** 
+- `external/sebti-group/results/analysis.md`
+
+---
+
+### 10. FGTI-2734 + Sotorasib Detailed Report
+
+**Date:** 2026-05-19
+
+**Implementation:**
+- Created detailed report for FGTI-2734 + Sotorasib combination with cell-line specific predictions
+- Included KRAS mutation status for each cell line to highlight biological relevance
+- Compared predictions with published experimental synergy data
+
+**Rationale:**
+- Focus analysis on the biologically relevant KRAS G12C cell line (NCIH23) since Sotorasib targets this specific mutation
+- Provide actionable insights for experimental validation
+
+**Files modified:**
+- `external/sebti-group/results/FGTI-2734+Sotorasib_report.md`
+
+**Key Findings:**
+
+1. **NCIH23 (KRAS G12C)** - the only biologically relevant cell line:
+   - ZIP: +1.44 (SynergyLM), +0.91 (L1000) - modest positive synergy
+   - Bliss: +0.38 (SynergyLM), +1.65 (L1000) - weak to moderate synergy
+   - HSA: -1.39 (SynergyLM), -1.37 (L1000) - slight antagonism
+   - Loewe: -6.28 (SynergyLM), -12.12 (L1000) - strong antagonism
+
+2. **Discrepancy with literature**: Published studies report synergy values of 5-9 (Loewe/HSA scale 0-14), but our models predict antagonism for these metrics in NCIH23
+
+3. **KRAS wild-type cell lines** (NCI-H322M, NCI-H226) show high predicted synergy, but these are biologically questionable since Sotorasib requires KRAS G12C for activity
+
+**Outputs:** 
+- `external/sebti-group/results/FGTI-2734+Sotorasib_report.md`
+
+---
+
 ### Next Steps
 
-- Evaluate impact of L1000 features on synergy prediction performance (compare L1000-augmented vs. original model).
-- Assess sensitivity of synergy predictions to proxy-matched drugs (match_type = "proxy") versus directly matched drugs.
-- Compare fusion strategies (attention vs. concat vs. product vs. pooling) on synergy prediction metrics.
+- Investigate model prediction discrepancy for NCIH23 vs. published experimental data
+- Validate FGTI-2734 + Sotorasib predictions experimentally in NCIH23 (KRAS G12C)
+- Consider retraining with KRAS mutation-aware features
+- Generate direct L1000 profiles for FGTI-2734 and Sotorasib to improve L1000 model predictions
+- Compare fusion strategies (attention vs. concat vs. product vs. pooling) on synergy prediction metrics
